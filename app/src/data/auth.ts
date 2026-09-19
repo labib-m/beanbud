@@ -8,6 +8,7 @@ type Result = { ok: true } | { ok: false; message: string }
 // A message to show on the sign-in screen once, e.g. after a stale session was cleared.
 let flashMessage = ''
 export const takeFlash = (): string => { const m = flashMessage; flashMessage = ''; return m }
+export const setFlash = (message: string): void => { flashMessage = message }
 type ErrorBody = { locked?: boolean; minutes?: number; reason?: string; detail?: string } | null
 
 async function bodyOf(error: unknown): Promise<ErrorBody> {
