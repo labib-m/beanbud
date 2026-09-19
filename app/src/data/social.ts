@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { RecentVisit } from '../lib/recent'
 import type { FeedVisit, LiteVisit, Profile } from '../lib/types'
 
 export async function fetchFeed(limit = 60): Promise<FeedVisit[]> {
@@ -64,3 +65,20 @@ export async function isHandleFree(handle: string, myId: string): Promise<boolea
 }
 
 export const HANDLE_RULE = /^[A-Za-z0-9_.-]{2,24}$/
+
+/**
+ * One person's most recent visits with their cafe and drinks (no notes), for the
+ * "recent" sections on a profile. Works for anyone: visits and drinks are readable by
+ * every signed-in user. 60 is plenty to find 3 different cafes.
+ */
+export async function fetchRecentActivity(userId: string): Promise<RecentVisit[]> {
+  const { data, error } = await supabase
+    .from('visits')
+    .select('id, cafe_id, visited_on, created_at, overall, cafes(name, city, area), visit_drinks(drink_type, score, sort_order)')
+    .eq('user_id', userId)
+    .order('visited_on', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(60)
+  if (error) throw new Error(error.message)
+  return data as unknown as RecentVisit[]
+}

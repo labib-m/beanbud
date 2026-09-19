@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { RecentSections } from '../components/RecentSections'
 import { Stars } from '../components/Stars'
 import { fetchLiteVisits, fetchProfiles } from '../data/social'
 import { useLoad } from '../data/useLoad'
@@ -57,6 +58,8 @@ export function PersonProfile() {
       </header>
 
       {!loading && !error && !view && <p className="muted">That person isn't here.</p>}
+
+      {view && <RecentSections userId={view.p.id} name={displayName(view.p).split(' ')[0]} />}
 
       {view && (
         <section className="section">

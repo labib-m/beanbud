@@ -229,3 +229,9 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .input.pin::placeholder { letter-spacing: 0.5em; }
 .row-links { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .note-box { background: var(--surf); border-radius: 18px; padding: 12px 14px; font-size: 13px; }
+
+/* ---- recent cafes / drinks on profiles ---- */
+.recent-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surf); border-radius: 20px; padding: 12px 15px; color: inherit; text-decoration: none; }
+a.recent-row:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.recent-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.recent-main b { font-size: 14px; }

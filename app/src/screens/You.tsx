@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { RecentSections } from '../components/RecentSections'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { fetchLiteVisits, fetchProfiles, updateProfile, type ProfileEdit } from '../data/social'
 import { useLoad } from '../data/useLoad'
@@ -44,6 +45,7 @@ export function You() {
             <div><b>{data.stats.cities}</b><span>cities</span></div>
             <div><b>{data.stats.average ? data.stats.average.toFixed(1) : '–'}</b><span>average</span></div>
           </div>
+          <RecentSections userId={me} own />
           <p className="muted spaced">Other people see your name, username and these details. Your notes stay private.</p>
           <div className="row-btns">
             <button className="btn ghost" onClick={() => setEditing(true)}>Edit profile</button>
