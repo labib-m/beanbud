@@ -96,3 +96,16 @@ test('sameSecret ignores stray whitespace and a trailing newline on either side,
   assert.equal(await m.sameSecret('ab cd', 'abcd'), false)     // inner spaces still matter
   assert.equal(await m.sameSecret('', ''), true)
 })
+
+test('describeToken reports algorithm, role and expiry, and never the token itself', () => {
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
+  const tok = (h, p) => b64(h) + '.' + b64(p) + '.signature-not-checked'
+  const future = Math.floor(Date.now() / 1000) + 3600, past = Math.floor(Date.now() / 1000) - 3600
+  const user = m.describeToken(tok({ alg: 'ES256' }, { role: 'authenticated', sub: 'u1', exp: future }))
+  assert.equal(user, 'alg=ES256 role=authenticated expired=no has_user=yes')
+  assert.equal(m.describeToken(tok({ alg: 'HS256' }, { role: 'anon', exp: future })), 'alg=HS256 role=anon expired=no has_user=no')
+  assert.match(m.describeToken(tok({ alg: 'ES256' }, { role: 'authenticated', sub: 'u1', exp: past })), /expired=yes/)
+  assert.equal(m.describeToken(''), 'no token')
+  assert.equal(m.describeToken('not-a-jwt'), 'not a readable JWT')
+  assert.ok(!user.includes('signature'))
+})

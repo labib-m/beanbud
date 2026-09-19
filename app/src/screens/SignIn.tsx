@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { PinInput } from '../components/PinInput'
-import { PIN_LENGTH, signInWithPin, signUp } from '../data/auth'
+import { PIN_LENGTH, signInWithPin, signUp, takeFlash } from '../data/auth'
 
 type Mode = 'signin' | 'create'
 const USERNAME_RULE = /^[A-Za-z0-9_.-]{2,24}$/
@@ -11,7 +11,7 @@ export function SignIn() {
   const [pin, setPin] = useState('')
   const [again, setAgain] = useState('')
   const [invite, setInvite] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => takeFlash())
   const [busy, setBusy] = useState(false)
   const [forgot, setForgot] = useState(false)
 

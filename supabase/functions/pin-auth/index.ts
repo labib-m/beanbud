@@ -106,6 +106,27 @@ export function randomPassword(): string {
   return [...b].map((x) => x.toString(16).padStart(2, '0')).join('') + 'A1!a'
 }
 
+/**
+ * A safe, one-line description of a token for logs and error messages: which algorithm
+ * signed it, which role it carries, whether it has expired. Never includes the token.
+ * (A public "anon" key as the token is the classic sign the app didn't send the user's own.)
+ */
+export function describeToken(token: string): string {
+  if (!token) return 'no token'
+  try {
+    const decode = (part: string) => {
+      const b64 = part.replace(/-/g, '+').replace(/_/g, '/')
+      return JSON.parse(atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, '=')))
+    }
+    const [h, p] = token.split('.')
+    const header = decode(h), payload = decode(p)
+    const expired = typeof payload.exp === 'number' ? (payload.exp * 1000 < Date.now() ? 'yes' : 'no') : 'n/a'
+    return 'alg=' + header.alg + ' role=' + payload.role + ' expired=' + expired + ' has_user=' + (payload.sub ? 'yes' : 'no')
+  } catch {
+    return 'not a readable JWT'
+  }
+}
+
 /** An address that can never receive mail (.invalid is reserved for exactly that). */
 export const syntheticEmail = () => 'u-' + crypto.randomUUID() + '@users.beanbud.invalid'
 
@@ -231,9 +252,14 @@ async function setPin(req: Request, body: Record<string, unknown>): Promise<Resp
 
   // Who is asking? Ask Supabase Auth to validate their session token.
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
-  const { admin } = clients()
+  const { admin, anon } = clients()
   const { data: who, error: whoError } = await admin.auth.getUser(token)
-  if (whoError || !who?.user) return json({ ok: false }, 401)   // logged-out (anon key) callers stop here
+  if (whoError || !who?.user) {
+    // Logged-out (anon key) callers stop here. Say why, so a real failure can be diagnosed.
+    const detail = describeToken(token)
+    console.error('set-pin: could not verify the caller:', whoError?.message ?? 'no user returned', '|', detail)
+    return json({ ok: false, reason: 'session', detail }, 401)
+  }
 
   const password = await derivePassword(pepper, who.user.id, body.pin as string)
   const { error } = await admin.auth.admin.updateUserById(who.user.id, {
@@ -245,7 +271,18 @@ async function setPin(req: Request, body: Record<string, unknown>): Promise<Resp
   const { data: profile } = await admin.from('profiles').select('handle').eq('id', who.user.id).maybeSingle()
   const handle = normaliseHandle(profile?.handle)
   if (handle) await clear(admin, handle)   // changing the PIN also clears any lockout
-  return json({ ok: true })
+
+  // Changing a password ends the caller's existing sessions on Supabase's side, so the
+  // token they used a moment ago is now dead. Sign them straight back in with the new
+  // password and hand over the fresh session. (If that fails the PIN is still saved;
+  // the app then just asks them to sign in.)
+  let fresh: { access_token: string; refresh_token: string } | null = null
+  if (who.user.email) {
+    const { data, error: signInError } = await anon.auth.signInWithPassword({ email: who.user.email, password })
+    if (signInError) console.error('set-pin: saved, but the fresh sign-in failed:', signInError.message)
+    else fresh = data.session
+  }
+  return json({ ok: true, access_token: fresh?.access_token ?? null, refresh_token: fresh?.refresh_token ?? null })
 }
 
 // ------------------------------------------------------- admin-reset-pin
