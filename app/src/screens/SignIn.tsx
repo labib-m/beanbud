@@ -8,6 +8,10 @@ type Status =
   | { kind: 'sent'; via: 'username'; handle: string }
   | { kind: 'error'; message: string }
 
+// Supabase only accepts return addresses that match an entry like
+// https://your-app.vercel.app/** , which needs the trailing slash.
+const RETURN_TO = window.location.origin + '/'
+
 export function SignIn() {
   const [value, setValue] = useState('')
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
@@ -19,7 +23,7 @@ export function SignIn() {
     setStatus({ kind: 'sending' })
 
     if (clean.includes('@') && !clean.startsWith('@')) {
-      const { error } = await supabase.auth.signInWithOtp({ email: clean, options: { emailRedirectTo: window.location.origin } })
+      const { error } = await supabase.auth.signInWithOtp({ email: clean, options: { emailRedirectTo: RETURN_TO } })
       setStatus(error ? { kind: 'error', message: error.message } : { kind: 'sent', via: 'email', email: clean })
       return
     }
@@ -27,7 +31,7 @@ export function SignIn() {
     // A username: a server function finds the account and emails its owner.
     const handle = clean.replace(/^@/, '')
     const { error } = await supabase.functions.invoke('sign-in-with-username', {
-      body: { username: handle, redirectTo: window.location.origin },
+      body: { username: handle, redirectTo: RETURN_TO },
     })
     setStatus(
       error

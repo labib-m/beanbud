@@ -42,7 +42,10 @@ Deno.serve(async (req) => {
     const handle = String(body?.username ?? '').trim().replace(/^@/, '')
     if (!/^[A-Za-z0-9_.-]{2,24}$/.test(handle)) return same()
 
-    const redirectTo = ALLOWED_ORIGINS.includes(String(body?.redirectTo ?? '')) ? String(body.redirectTo) : undefined
+    // Compare without a trailing slash, but send WITH one: Supabase's allow-list
+    // entries end in /** and only match addresses that have the slash.
+    const wanted = String(body?.redirectTo ?? '').replace(/\/+$/, '')
+    const redirectTo = ALLOWED_ORIGINS.includes(wanted) ? wanted + '/' : undefined
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } })
     const { data: profile } = await admin.from('profiles').select('id').ilike('handle', escapeLike(handle)).maybeSingle()
