@@ -1,0 +1,17 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.local
+
+# Personal data that isn't needed to run the app
+beanbud-export.json
+
+# Dependencies and build output
+node_modules
+dist
+
+# Tooling and OS noise
+.claude/
+.DS_Store
+*.log

@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bean Bud</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E7EAE2; --card:#F4F6F0; --ink:#1C2620; --soft:#57655B;
+  --rule:#C6CDC0; --accent:#2340B8; --accent-bg:#DCE2F8;
+  --mark:#2E3B33; --mark-empty:#CDD4C7; --warn:#8A3A2E; --up:#1F6B4A;
+  --shadow:rgba(28,38,32,.10); --radius:3px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131815; --card:#1C221E; --ink:#E4E9E0; --soft:#9BA89F;
+    --rule:#303A33; --accent:#93A8FF; --accent-bg:#232C4A;
+    --mark:#C9D3C6; --mark-empty:#333D36; --warn:#E39184; --up:#71C79C;
+    --shadow:rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131815; --card:#1C221E; --ink:#E4E9E0; --soft:#9BA89F;
+  --rule:#303A33; --accent:#93A8FF; --accent-bg:#232C4A;
+  --mark:#C9D3C6; --mark-empty:#333D36; --warn:#E39184; --up:#71C79C;
+  --shadow:rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:17px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4,button,input,select,textarea,.ui{font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:1020px;margin:0 auto;padding:28px 20px 96px}
+
+.masthead{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+.masthead h1{font-size:clamp(34px,7vw,56px);font-weight:800;letter-spacing:-.035em;line-height:.94;margin:0 0 10px}
+.tally{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;
+  font-family:"Bricolage Grotesque",sans-serif;font-size:14px;color:var(--soft);font-variant-numeric:tabular-nums}
+.tally b{color:var(--ink);font-weight:700;font-size:17px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+
+button{cursor:pointer;font-size:14px;font-weight:600;background:var(--card);color:var(--ink);
+  border:1px solid var(--rule);border-radius:var(--radius);padding:8px 14px}
+button:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.entry:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.primary:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.quiet{background:transparent;color:var(--soft)}
+.danger{color:var(--warn);border-color:var(--warn);background:transparent}
+.danger.armed{background:var(--warn);border-color:var(--warn);color:var(--paper)}
+.small{font-size:13px;padding:5px 10px}
+
+.controls{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;margin-bottom:8px}
+input[type=text],input[type=date],input[type=time],input[type=url],select,textarea{
+  width:100%;background:var(--card);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--radius);padding:9px 11px;font-size:15px}
+textarea{font-family:"Newsreader",Georgia,serif;font-size:16px;resize:vertical;min-height:70px}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 20px}
+.chip{font-family:"Bricolage Grotesque",sans-serif;font-size:12.5px;font-weight:600;
+  padding:5px 10px;border:1px solid var(--rule);border-radius:100px;background:transparent;color:var(--soft);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+
+.entry{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);
+  padding:16px 18px;margin-bottom:10px;cursor:pointer}
+.entry:hover{border-color:var(--ink)}
+.entry.open{border-color:var(--ink);border-left:4px solid var(--accent);padding-left:15px;cursor:default}
+.head{display:flex;gap:16px;align-items:flex-start;justify-content:space-between}
+.name{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:21px;letter-spacing:-.02em;line-height:1.15;margin:0}
+.where{font-size:15px;color:var(--soft);margin-top:2px}
+.overall{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:27px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.04em;line-height:1;text-align:right;flex:none}
+.overall small{display:block;font-size:11px;font-weight:600;color:var(--soft);letter-spacing:0;margin-top:3px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;align-items:center}
+.tag{font-family:"Bricolage Grotesque",sans-serif;font-size:12px;font-weight:600;
+  padding:3px 8px;border:1px solid var(--rule);border-radius:100px;color:var(--soft)}
+.tag.on{border-color:var(--ink);color:var(--ink)}
+.trend{font-family:"Bricolage Grotesque",sans-serif;font-size:12.5px;font-weight:600;color:var(--soft)}
+.trend.up{color:var(--up)} .trend.down{color:var(--warn)}
+
+.stars{position:relative;display:inline-flex;line-height:0;flex:none;vertical-align:middle}
+.stars svg{display:block}
+.s-empty,.s-fill{display:inline-flex;gap:2px}
+.s-empty path{fill:var(--mark-empty)}
+.s-fill{position:absolute;left:0;top:0;bottom:0;overflow:hidden;white-space:nowrap}
+.s-fill path{fill:var(--mark)}
+.starpick{display:inline-flex;gap:2px;flex:none}
+.starpick .star{background:none;border:0;padding:2px;margin:0;line-height:0;cursor:pointer;width:auto}
+.starpick .star path{fill:var(--mark-empty)}
+.starpick .star.on path{fill:var(--mark)}
+.starpick:hover .star path{fill:var(--mark)}
+.starpick .star:hover ~ .star path{fill:var(--mark-empty)}
+.starpick .star:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:2px}
+.scoreline{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--soft);margin:5px 0;font-variant-numeric:tabular-nums}
+.scoreline span.lbl{min-width:112px;font-family:"Bricolage Grotesque",sans-serif;font-size:13px;font-weight:600;color:var(--ink)}
+
+.detail{border-top:1px solid var(--rule);margin-top:14px;padding-top:14px;display:none}
+.entry.open .detail{display:block}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.field{margin-bottom:12px}
+.field h4{font-size:12.5px;font-weight:700;color:var(--soft);margin:0 0 2px}
+.field p{margin:0;font-size:16px;white-space:pre-line}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+a{color:var(--accent)}
+
+.log{margin-top:18px;border-top:1px solid var(--rule);padding-top:14px}
+.log h4{font-size:13px;font-weight:700;margin:0 0 10px;color:var(--ink)}
+.visit{border-left:2px solid var(--rule);padding:0 0 12px 14px;margin-bottom:2px}
+.visit:last-child{padding-bottom:0}
+.visit.sel{border-left-color:var(--accent)}
+.visit-head{display:flex;gap:12px;align-items:baseline;justify-content:space-between;cursor:pointer}
+.visit-date{font-family:"Bricolage Grotesque",sans-serif;font-size:14px;font-weight:700}
+.visit-score{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
+.visit-body{display:none;padding-top:8px}
+.visit.sel .visit-body{display:block}
+.spark{margin:10px 0 2px}
+
+dialog{border:1px solid var(--ink);border-radius:var(--radius);padding:0;background:var(--paper);color:var(--ink);
+  width:min(760px,94vw);max-height:90vh;box-shadow:0 18px 48px var(--shadow)}
+dialog::backdrop{background:rgba(10,16,12,.55)}
+.form-head{position:sticky;top:0;background:var(--paper);border-bottom:2px solid var(--ink);
+  padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:3}
+.form-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.form-body{padding:20px 22px;overflow:auto;max-height:calc(90vh - 150px)}
+.form-foot{position:sticky;bottom:0;background:var(--paper);border-top:1px solid var(--rule);
+  padding:14px 22px;display:flex;justify-content:space-between;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+label{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:12.5px;font-weight:600;color:var(--soft);margin:0 0 4px}
+fieldset{border:0;padding:0;margin:0 0 18px}
+legend{font-family:"Bricolage Grotesque",sans-serif;font-size:13px;font-weight:700;
+  padding:0 0 8px;border-bottom:1px solid var(--rule);width:100%;margin-bottom:12px}
+.rate{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.rate>span{flex:1;font-family:"Bricolage Grotesque",sans-serif;font-size:14px;font-weight:600}
+.rate em{font-style:normal;width:14px;text-align:right;color:var(--soft);
+  font-family:"Bricolage Grotesque",sans-serif;font-size:14px;font-variant-numeric:tabular-nums}
+
+.combo{position:relative}
+.suggest{position:absolute;left:0;right:0;top:100%;z-index:5;margin:2px 0 0;padding:4px;list-style:none;
+  background:var(--card);border:1px solid var(--ink);border-radius:var(--radius);box-shadow:0 10px 24px var(--shadow);max-height:240px;overflow:auto}
+.suggest li{padding:8px 10px;cursor:pointer;border-radius:2px}
+.suggest li[aria-selected="true"],.suggest li:hover{background:var(--accent-bg)}
+.suggest b{font-family:"Bricolage Grotesque",sans-serif;font-size:15px;font-weight:700;display:block}
+.suggest em{font-style:normal;font-size:13px;color:var(--soft)}
+.linked{background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--radius);
+  padding:9px 12px;margin-bottom:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;
+  font-family:"Bricolage Grotesque",sans-serif;font-size:13.5px;color:var(--accent)}
+
+.switch{display:inline-flex;border:1px solid var(--rule);border-radius:var(--radius);overflow:hidden}
+.switch button{border:0;border-radius:0;background:transparent;color:var(--soft)}
+.switch button+button{border-left:1px solid var(--rule)}
+.switch button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.who{font-weight:700}
+.byline{font-family:"Bricolage Grotesque",sans-serif;font-size:12.5px;font-weight:600;color:var(--accent)}
+.fitem{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:8px;display:flex;gap:14px;align-items:flex-start}
+.fitem{cursor:pointer}
+.fitem:hover{border-color:var(--ink)}
+.fwho{width:34px;height:34px;flex:none;border-radius:50%;background:var(--accent-bg);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-family:"Bricolage Grotesque",sans-serif;
+  font-weight:700;font-size:14px}
+.fbody{flex:1;min-width:0}
+.fline{font-size:16px;margin:0 0 3px}
+.fline b{font-family:"Bricolage Grotesque",sans-serif;font-size:16px;font-weight:700}
+.fmeta{font-family:"Bricolage Grotesque",sans-serif;font-size:12.5px;color:var(--soft);
+  display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:5px}
+.fnote{font-size:15px;color:var(--soft);margin:6px 0 0;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wholine{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#profile:empty{display:none}
+.phead{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--accent);
+  border-radius:var(--radius);padding:18px 20px;margin-bottom:18px}
+.ptop{display:flex;gap:16px;align-items:flex-start}
+.pav{width:54px;height:54px;flex:none;border-radius:50%;background:var(--accent-bg);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:20px}
+.pname{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:23px;letter-spacing:-.02em;margin:0;line-height:1.1}
+.phandle{font-family:"Bricolage Grotesque",sans-serif;font-size:13.5px;color:var(--accent);font-weight:600}
+.ptag{margin:7px 0 0;font-size:16px}
+.pstats{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:12px;
+  font-family:"Bricolage Grotesque",sans-serif;font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
+.pstats b{color:var(--ink);font-size:16px;font-weight:700}
+.pcard{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);
+  padding:16px;cursor:pointer;display:flex;gap:14px;align-items:flex-start}
+.pcard:hover{border-color:var(--ink)}
+.people{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:700px){.people{grid-template-columns:1fr}}
+.empty{border:1px dashed var(--rule);border-radius:var(--radius);padding:40px 24px;text-align:center;color:var(--soft)}
+.empty h3{font-size:19px;color:var(--ink);margin:0 0 6px}
+.note{font-size:14px;color:var(--soft)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:var(--ink);color:var(--paper);
+  padding:10px 16px;border-radius:var(--radius);font-family:"Bricolage Grotesque",sans-serif;font-size:14px;z-index:99}
+.drow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border-bottom:1px solid var(--rule);padding:9px 0}
+.drow:last-of-type{border-bottom:0}
+.dname{flex:1;min-width:130px;font-family:"Bricolage Grotesque",sans-serif;font-size:14px;font-weight:600}
+.price{display:flex;align-items:center;gap:4px}
+.price i{font-style:normal;color:var(--soft);font-family:"Bricolage Grotesque",sans-serif;font-size:14px}
+.price input{width:92px;padding:6px 8px;font-variant-numeric:tabular-nums}
+.drow .drop{border:0;background:transparent;color:var(--soft);padding:4px 6px;font-size:16px}
+.drow .drop:hover{color:var(--warn)}
+.addrow{display:flex;gap:8px;margin-top:12px}
+.curbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.curbar select{width:auto;min-width:230px}
+.dlist{margin-top:4px}
+.dline{display:flex;gap:10px;align-items:center;font-size:15px;padding:5px 0;border-bottom:1px solid var(--rule)}
+.dline b{flex:1}
+.dline:last-child{border-bottom:0}
+.dline b{font-family:"Bricolage Grotesque",sans-serif;font-size:14px;font-weight:600}
+.dline span{font-family:"Bricolage Grotesque",sans-serif;font-size:13.5px;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pricetag{font-family:"Bricolage Grotesque",sans-serif;font-size:12.5px;font-weight:700;
+  padding:3px 9px;border-radius:100px;background:var(--accent-bg);color:var(--accent);font-variant-numeric:tabular-nums}
+@media (max-width:700px){
+  .controls{grid-template-columns:1fr}
+  .cols,.grid2,.grid3{grid-template-columns:1fr}
+  .wrap{padding:20px 14px 80px}
+  .scoreline span.lbl{min-width:98px}
+}
+@media (prefers-reduced-motion:no-preference){ .entry{transition:border-color .12s ease} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <h1>Bean Bud</h1>
+    <div class="tally" id="tally"><span class="note">Loading your entries…</span></div>
+    <div class="bar">
+      <button id="btn-home">My notebook</button>
+      <button class="primary" id="btn-new">Log a visit</button>
+      <div class="switch" role="tablist" aria-label="View">
+        <button id="tab-cafes" role="tab" aria-selected="true">Notebook</button>
+        <button id="tab-feed" role="tab" aria-selected="false">Feed</button>
+        <button id="tab-people" role="tab" aria-selected="false">People</button>
+      </div>
+      <button id="btn-export">Export notebook</button>
+      <button class="quiet" id="btn-theme">Switch theme</button>
+      <button class="danger" id="btn-sample" hidden>Remove sample data</button>
+    </div>
+  </header>
+
+  <section id="profile"></section>
+
+  <div class="controls">
+    <input type="text" id="q" placeholder="Search name, area, notes, what you ordered…" aria-label="Search">
+    <select id="drink" aria-label="Filter by coffee"><option value="">Any coffee</option></select>
+    <select id="city" aria-label="Filter by city"><option value="">All cities</option></select>
+    <select id="sort" aria-label="Sort">
+      <option value="recent">Most recent visit</option>
+      <option value="score">Highest rated</option>
+      <option value="visits">Most visited</option>
+      <option value="drink-score">Best at the chosen coffee</option>
+      <option value="drink-price">Cheapest chosen coffee</option>
+      <option value="name">Name A–Z</option>
+      <option value="price">Cheapest first</option>
+    </select>
+  </div>
+  <div class="chiprow" id="filters"></div>
+
+  <main id="list"></main>
+</div>
+
+<dialog id="profedit">
+  <form method="dialog">
+    <div class="form-head"><h2>Your profile</h2>
+      <button type="button" class="quiet" id="pf-close">Close</button></div>
+    <div class="form-body">
+      <div class="grid2">
+        <div><label for="pf-handle">Username</label><input type="text" id="pf-handle" placeholder="labib" maxlength="24"></div>
+        <div><label for="pf-city">Home city</label><input type="text" id="pf-city" placeholder="Dhaka"></div>
+      </div>
+      <div style="margin-top:12px"><label for="pf-tagline">One line about you</label>
+        <input type="text" id="pf-tagline" maxlength="90" placeholder="Chasing a decent flat white across Dhaka"></div>
+      <div style="margin-top:12px"><label for="pf-order">Your usual order</label>
+        <input type="text" id="pf-order" placeholder="Iced americano, no sugar"></div>
+      <div style="margin-top:12px"><label for="pf-about">More, if you want</label><textarea id="pf-about" maxlength="400"></textarea></div>
+      <p class="note" style="margin-top:12px">Your username is how friends see you here. It is not a login.</p>
+    </div>
+    <div class="form-foot"><span style="flex:1"></span>
+      <button type="button" id="pf-cancel">Cancel</button>
+      <button type="button" class="primary" id="pf-save">Save profile</button></div>
+  </form>
+</dialog>
+
+<dialog id="editor">
+  <form method="dialog" id="form">
+    <div class="form-head">
+      <h2 id="form-title">New visit</h2>
+      <button type="button" class="quiet" id="btn-close">Close</button>
+    </div>
+    <div class="form-body">
+
+      <div class="linked" id="linked" hidden>
+        <span id="linked-text"></span>
+        <button type="button" class="small" id="btn-unlink">Log as a new cafe</button>
+      </div>
+
+      <fieldset>
+        <legend>Where</legend>
+        <div class="grid2">
+          <div class="combo">
+            <label for="f-name">Cafe name</label>
+            <input type="text" id="f-name" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest" required>
+            <ul class="suggest" id="suggest" role="listbox" hidden></ul>
+          </div>
+          <div><label for="f-city">City</label><input type="text" id="f-city" list="cities" placeholder="Dhaka"><datalist id="cities"></datalist></div>
+        </div>
+        <div class="grid2" style="margin-top:12px">
+          <div><label for="f-area">Neighbourhood</label><input type="text" id="f-area" placeholder="Gulshan 2"></div>
+          <div><label for="f-visited">Date of this visit</label><input type="date" id="f-visited"></div>
+        </div>
+        <div style="margin-top:12px"><label for="f-address">Address</label><input type="text" id="f-address"></div>
+        <div style="margin-top:12px"><label for="f-map">Map link</label><input type="url" id="f-map" placeholder="https://maps.app.goo.gl/…"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Ratings for this visit, 1 to 5</legend>
+        <div id="rates"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Coffee ordered, with prices</legend>
+        <div class="curbar">
+          <label for="f-currency" style="margin:0">Prices on this visit are in</label>
+          <select id="f-currency" aria-label="Currency for this visit"></select>
+        </div>
+        <div class="chiprow" id="f-drinkpicks" style="margin:0 0 6px"></div>
+        <div id="f-drinks" class="dlist"></div>
+        <div class="addrow">
+          <input type="text" id="f-newdrink" placeholder="Something not on the list">
+          <button type="button" id="btn-adddrink">Add</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Hours and cost</legend>
+        <div class="grid3">
+          <div><label for="f-opens">Opens</label><input type="time" id="f-opens"></div>
+          <div><label for="f-closes">Closes</label><input type="time" id="f-closes"></div>
+          <div><label for="f-price">Price band</label>
+            <select id="f-price">
+              <option value="">Not set</option>
+              <option value="1">Cheap</option>
+              <option value="2">Moderate</option>
+              <option value="3">Pricey</option>
+              <option value="4">A splurge</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2" style="margin-top:12px">
+          <div><label for="f-hoursnote">Hours notes</label><input type="text" id="f-hoursnote" placeholder="Closed Mondays, kitchen stops at 10"></div>
+          <div><label for="f-spend">What you spent</label><input type="text" id="f-spend" placeholder="850 for two"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Good for</legend>
+        <div class="chiprow" id="f-goodfor" style="margin:0"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>What it has</legend>
+        <div class="chiprow" id="f-amenities" style="margin:0"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Getting there</legend>
+        <div class="grid2">
+          <div><label for="f-parking">Parking</label>
+            <select id="f-parking">
+              <option value="">Not set</option>
+              <option>Own lot, easy</option>
+              <option>Valet</option>
+              <option>Street, usually free spots</option>
+              <option>Street, tight</option>
+              <option>No parking</option>
+              <option>Didn't drive</option>
+            </select>
+          </div>
+          <div><label for="f-parknote">Parking notes</label><input type="text" id="f-parknote" placeholder="Guard waves you in from the side lane"></div>
+        </div>
+        <div style="margin-top:12px">
+          <label for="f-areanote">Neighbourhood around it</label>
+          <textarea id="f-areanote" placeholder="What's nearby, how it feels walking up, traffic at that hour…"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Notes from this visit</legend>
+        <div>
+          <label for="f-notes">How it went</label>
+          <textarea id="f-notes" style="min-height:150px" placeholder="Who was in, how loud it was, whether anyone minded you staying, what stood out…"></textarea>
+        </div>
+        <div style="margin-top:12px">
+          <label for="f-verdict">Verdict</label>
+          <select id="f-verdict">
+            <option value="">Not set</option>
+            <option value="regular">Make it a regular</option>
+            <option value="return">Worth returning</option>
+            <option value="once">One and done</option>
+          </select>
+        </div>
+      </fieldset>
+
+    </div>
+    <div class="form-foot">
+      <button type="button" class="danger" id="btn-delete" hidden>Delete this visit</button>
+      <span style="flex:1"></span>
+      <button type="button" id="btn-cancel">Cancel</button>
+      <button type="button" class="primary" id="btn-save">Save visit</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const SCORES = [
+  ["ambiance","Ambiance"],
+  ["drinks","Coffee and drinks"],
+  ["food","Food"],
+  ["service","Service"],
+  ["crowd","Crowd and vibe"]
+];
+const GOODFOR = ["Solo work","Meetings","Friends","Family","Dates","Reading","Late night","Long stays"];
+const AMENITIES = ["Wi-Fi","Power outlets","Air conditioning","Outdoor seating","Quiet corners","Big group table","Cards accepted","Clean washroom"];
+const VERDICTS = {regular:"Make it a regular", return:"Worth returning", once:"One and done"};
+const DRINKS = ["Iced americano","Cappuccino","Americano","Espresso","Flat white","Latte","Iced latte","Cold brew","Filter coffee","Mocha"];
+const CURRENCIES = [
+  {c:"BDT",s:"\u09F3",n:"Bangladeshi taka",fav:1},
+  {c:"THB",s:"\u0E3F",n:"Thai baht",fav:1},
+  {c:"USD",s:"$",n:"US dollar",fav:1},
+  {c:"EUR",s:"\u20AC",n:"Euro",fav:1},
+  {c:"GBP",s:"\u00A3",n:"Pound sterling",fav:1},
+  {c:"INR",s:"\u20B9",n:"Indian rupee",fav:1},
+  {c:"AED",s:"AED ",n:"UAE dirham",fav:1},
+  {c:"SGD",s:"S$",n:"Singapore dollar",fav:1},
+  {c:"MYR",s:"RM",n:"Malaysian ringgit",fav:1},
+  {c:"JPY",s:"\u00A5",n:"Japanese yen"},
+  {c:"CNY",s:"CN\u00A5",n:"Chinese yuan"},
+  {c:"HKD",s:"HK$",n:"Hong Kong dollar"},
+  {c:"KRW",s:"\u20A9",n:"South Korean won"},
+  {c:"TWD",s:"NT$",n:"New Taiwan dollar"},
+  {c:"IDR",s:"Rp",n:"Indonesian rupiah"},
+  {c:"PHP",s:"\u20B1",n:"Philippine peso"},
+  {c:"VND",s:"\u20AB",n:"Vietnamese dong"},
+  {c:"AUD",s:"A$",n:"Australian dollar"},
+  {c:"NZD",s:"NZ$",n:"New Zealand dollar"},
+  {c:"CAD",s:"C$",n:"Canadian dollar"},
+  {c:"CHF",s:"CHF ",n:"Swiss franc"},
+  {c:"SEK",s:"kr",n:"Swedish krona"},
+  {c:"NOK",s:"kr",n:"Norwegian krone"},
+  {c:"DKK",s:"kr",n:"Danish krone"},
+  {c:"PLN",s:"z\u0142",n:"Polish zloty"},
+  {c:"CZK",s:"K\u010d",n:"Czech koruna"},
+  {c:"TRY",s:"\u20BA",n:"Turkish lira"},
+  {c:"RUB",s:"\u20BD",n:"Russian ruble"},
+  {c:"SAR",s:"SR ",n:"Saudi riyal"},
+  {c:"QAR",s:"QR ",n:"Qatari riyal"},
+  {c:"KWD",s:"KD ",n:"Kuwaiti dinar"},
+  {c:"OMR",s:"OMR ",n:"Omani rial"},
+  {c:"EGP",s:"E\u00A3",n:"Egyptian pound"},
+  {c:"ZAR",s:"R",n:"South African rand"},
+  {c:"NGN",s:"\u20A6",n:"Nigerian naira"},
+  {c:"KES",s:"KSh",n:"Kenyan shilling"},
+  {c:"PKR",s:"Rs ",n:"Pakistani rupee"},
+  {c:"LKR",s:"Rs ",n:"Sri Lankan rupee"},
+  {c:"NPR",s:"NRs ",n:"Nepalese rupee"},
+  {c:"BRL",s:"R$",n:"Brazilian real"},
+  {c:"MXN",s:"MX$",n:"Mexican peso"},
+  {c:"ARS",s:"AR$",n:"Argentine peso"},
+  {c:"ILS",s:"\u20AA",n:"Israeli shekel"}
+];
+const CURMAP = {}; CURRENCIES.forEach(x => CURMAP[x.c] = x);
+const DEFCUR = "BDT";
+function curSym(c){ return (CURMAP[c] || CURMAP[DEFCUR]).s; }
+function lastCurrency(){
+  const v = store.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))[0];
+  return (v && v.currency) || DEFCUR;
+}
+const CARRY = ["name","city","area","address","map","opens","closes","hoursNote","price","currency","parking","parkNote","areaNote"];
+
+let db = null, store = [], local = false;
+let userCap = null, me = {id:"", owner:false, solo:true};
+let claiming = false;
+async function claimLegacy(){
+  if (claiming || !me.owner || !me.id || !db || local) return;
+  const orphans = store.filter(v => !v.owner).slice(0, 60);
+  if (!orphans.length) return;
+  claiming = true;
+  for (const v of orphans){
+    try { await db.collection("cafes").doc(v.id).update({owner: me.id}); } catch(e){ break; }
+  }
+  claiming = false;
+}
+function watchProfiles(){
+  if (!db || local) return;
+  db.collection("profiles").onSnapshot(snap => {
+    profiles = {};
+    snap.docs.forEach(d => { profiles[d.id] = d.data() || {}; });
+    render();
+  }, () => {});
+}
+async function saveProfile(data){
+  if (!me.id) return toast("Profile needs a signed-in account");
+  if (db && !local) await db.collection("profiles").doc(me.id).set(data);
+  else { profiles[me.id] = data; render(); }
+}
+async function initUser(){
+  try { userCap = await claude.use("user"); } catch(e){ userCap = null; }
+  if (!userCap) return;
+  try { me.owner = !!userCap.isOwner(); } catch(e){}
+  try { me.id = (await userCap.id()) || ""; } catch(e){ me.id = ""; }
+  watchProfiles();
+  await claimLegacy();
+  render();
+}
+let profiles = {};
+function ownerOf(v){ return v.owner || (me.owner && me.id ? me.id : ""); }
+function mine(v){ return v.owner ? v.owner === me.id : (me.owner || !me.id); }
+function personId(){ return state.person || me.id || ""; }
+function prof(uid){ return profiles[uid] || {}; }
+function handleOf(uid){
+  const h = (prof(uid).handle || "").trim();
+  return h ? "@" + h.replace(/^@/,"") : "";
+}
+function peopleIds(){
+  const set = new Set(store.map(ownerOf).filter(Boolean));
+  Object.keys(profiles).forEach(id => set.add(id));
+  if (me.id) set.add(me.id);
+  return [...set];
+}
+function statsFor(uid){
+  const vs = store.filter(v => ownerOf(v) === uid);
+  const keys = new Set(vs.map(v => v.cafeKey));
+  const cities = new Set(vs.map(v => v.city).filter(Boolean));
+  const rated = vs.filter(v => avg(v) > 0);
+  return {visits: vs.length, cafes: keys.size, cities: cities.size,
+    mean: rated.length ? rated.reduce((x,v)=>x+avg(v),0)/rated.length : 0,
+    last: vs.map(v => v.visited||"").sort().pop() || ""};
+}
+function initials(id){ return id ? id.replace(/[^a-zA-Z0-9]/g,"").slice(0,2).toUpperCase() : "?"; }
+async function paintNames(){
+  const nodes = [...document.querySelectorAll("[data-uid]")];
+  if (!nodes.length) return;
+  const put = (n, nm) => {
+    if (n.classList.contains("fwho") || n.classList.contains("pav"))
+      n.textContent = nm ? nm.trim()[0].toUpperCase() : initials(n.dataset.uid);
+    else n.textContent = nm || "Someone";
+  };
+  const need = [];
+  nodes.forEach(n => {
+    const id = n.dataset.uid;
+    if (!id || id === me.id) return;
+    const stored = (prof(id).name || "").trim();
+    if (stored) put(n, stored); else need.push(n);
+  });
+  if (!need.length || !userCap) return;
+  const ids = [...new Set(need.map(n => n.dataset.uid))];
+  let ps = {};
+  try { ps = (await userCap.profiles(ids)) || {}; } catch(e){ return; }
+  need.forEach(n => put(n, (ps[n.dataset.uid] && ps[n.dataset.uid].name) || ""));
+}
+
+let state = {view:"cafes", person:"", q:"", city:"", drink:"", sort:"recent", tags:[], open:null, openVisit:null, editing:null};
+let draft = {}, sugg = {items:[], idx:-1};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s||"").toLowerCase().replace(/\s+/g," ").trim();
+const keyOf = (name,city) => norm(name) + "|" + norm(city);
+
+/* ---------- storage ---------- */
+const LS = "beanbud-v1";
+try {
+  const legacy = localStorage.getItem("cafe-notebook-v1");
+  if (legacy && !localStorage.getItem(LS)) localStorage.setItem(LS, legacy);
+} catch(e){}
+function readLocal(){ try{ return JSON.parse(localStorage.getItem(LS)||"[]"); }catch(e){ return []; } }
+function writeLocal(){ try{ localStorage.setItem(LS, JSON.stringify(store)); }catch(e){} }
+function hydrate(list){ return list.map(v => Object.assign({}, v, {cafeKey: v.cafeKey || keyOf(v.name, v.city)})); }
+
+async function initStore(){
+  try { db = await claude.use("db"); } catch(e){ db = null; }
+  if (db){
+    db.collection("cafes").onSnapshot(snap => {
+      store = hydrate(snap.docs.map(d => Object.assign({id:d.id}, d.data())));
+      render();
+      claimLegacy();
+    }, () => {
+      if (!local){ local = true; store = hydrate(readLocal()); render(); toast("Saving to this browser only"); }
+    });
+  } else { local = true; store = hydrate(readLocal()); render(); }
+}
+async function saveVisit(rec){
+  if (db && !local){
+    const body = Object.assign({}, rec); delete body.id;
+    await db.collection("cafes").doc(rec.id).set(body);
+  } else {
+    const i = store.findIndex(c => c.id === rec.id);
+    if (i > -1) store[i] = rec; else store.push(rec);
+    writeLocal(); render();
+  }
+}
+async function removeVisit(id){
+  if (db && !local){ await db.collection("cafes").doc(id).delete(); }
+  else { store = store.filter(c => c.id !== id); writeLocal(); render(); }
+}
+
+/* ---------- model ---------- */
+function avg(v){
+  const n = SCORES.map(([k]) => Number(v.scores && v.scores[k])).filter(x => x > 0);
+  return n.length ? n.reduce((a,b)=>a+b,0)/n.length : 0;
+}
+function scoped(){
+  const uid = personId();
+  return store.filter(v => ownerOf(v) === uid);
+}
+function groups(){ return groupsFrom(scoped()); }
+function groupsFor(uid){ return groupsFrom(store.filter(v => ownerOf(v) === uid)); }
+function groupsFrom(list){
+  const m = new Map();
+  list.forEach(v => { const k = v.cafeKey || keyOf(v.name,v.city); (m.get(k) || m.set(k,[]).get(k)).push(v); });
+  return [...m.entries()].map(([key,visits]) => {
+    visits.sort((a,b) => (a.visited||"").localeCompare(b.visited||"") || (a.updatedAt||0)-(b.updatedAt||0));
+    const latest = visits[visits.length-1];
+    const rated = visits.filter(v => avg(v) > 0);
+    const mean = rated.length ? rated.reduce((s,v)=>s+avg(v),0)/rated.length : 0;
+    const tags = [...new Set(visits.flatMap(v => v.goodFor||[]))];
+    const amen = [...new Set(visits.flatMap(v => v.amenities||[]))];
+    return {key, visits, latest, mean, tags, amen,
+      name:latest.name, city:latest.city, area:latest.area, price:latest.price,
+      lastDate:latest.visited||"", count:visits.length};
+  });
+}
+function drinkCatalog(){
+  const c = new Map();
+  store.forEach(v => (v.drinks||[]).forEach(d => { if (d.type) c.set(d.type, (c.get(d.type)||0)+1); }));
+  const used = [...c.entries()].sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0])).map(e => e[0]);
+  return {used, all: used.concat(DRINKS.filter(d => !c.has(d)))};
+}
+function drinkStats(g){
+  const m = new Map();
+  g.visits.forEach(v => {
+    const cur = v.currency || DEFCUR;
+    (v.drinks||[]).forEach(d => {
+      if (!d.type) return;
+      const e = m.get(d.type) || {type:d.type, n:0, scores:[], byCur:{}};
+      e.n++;
+      if (Number(d.score) > 0) e.scores.push(Number(d.score));
+      if (Number(d.price) > 0){
+        const b = e.byCur[cur] || (e.byCur[cur] = {prices:[], last:0});
+        b.prices.push(Number(d.price)); b.last = Number(d.price);
+      }
+      m.set(d.type, e);
+    });
+  });
+  const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+  return [...m.values()].map(e => {
+    const curs = Object.keys(e.byCur).map(c => ({cur:c, n:e.byCur[c].prices.length,
+      avg: mean(e.byCur[c].prices), last: e.byCur[c].last})).sort((a,b) => b.n - a.n);
+    const main = curs[0];
+    return Object.assign(e, {curs, cur: main ? main.cur : "",
+      avgPrice: main ? main.avg : 0, lastPrice: main ? main.last : 0,
+      avgScore: mean(e.scores)});
+  }).sort((a,b) => b.n - a.n);
+}
+function priceLabel(st){
+  if (!st || !st.curs.length) return "";
+  return st.curs.map(c => money(c.avg, c.cur)).join(" / ");
+}
+function statFor(g, type){ return drinkStats(g).find(s => s.type === type) || null; }
+function money(n, cur){
+  if (!n) return "";
+  const dec = (Number(n) % 1 === 0) ? 0 : 2;
+  return curSym(cur) + Number(n).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function crit(g,k){
+  const n = g.visits.map(v => Number(v.scores && v.scores[k])).filter(x => x > 0);
+  return n.length ? n.reduce((a,b)=>a+b,0)/n.length : 0;
+}
+function trend(g){
+  const rated = g.visits.filter(v => avg(v) > 0);
+  if (rated.length < 2) return null;
+  return avg(rated[rated.length-1]) - avg(rated[rated.length-2]);
+}
+const STAR = "M12 2.3l2.95 5.98 6.6.96-4.78 4.65 1.13 6.57L12 17.36l-5.9 3.1 1.13-6.57L2.45 9.24l6.6-.96z";
+function starRow(cls, size){
+  let h = '<span class="'+cls+'">';
+  for (let i=0;i<5;i++) h += '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'"><path d="'+STAR+'"/></svg>';
+  return h + '</span>';
+}
+function mergedNotes(v){
+  return [ v.order ? "Ordered: " + v.order : "", v.crowdNote || "", v.notes || "" ]
+    .filter(Boolean).join("\n\n");
+}
+function marks(n, size){
+  size = size || 15;
+  const val = Number(n) || 0;
+  const pct = Math.max(0, Math.min(1, val/5)) * 100;
+  return '<span class="stars" role="img" aria-label="'+(val?val.toFixed(1):"no rating")+' out of 5" style="width:'+(size*5+8)+'px">'
+    + starRow("s-empty", size)
+    + '<span class="s-fill" style="width:'+pct.toFixed(1)+'%">'
+    + Array(5).fill('<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'"><path d="'+STAR+'"/></svg>').join("")
+    + '</span></span>';
+}
+function starInput(attrs, v, size){
+  return '<div class="starpick">' + [1,2,3,4,5].map(n =>
+    '<button type="button" class="star'+(v>=n?" on":"")+'" '+attrs(n)
+    + ' aria-pressed="'+(v===n)+'" aria-label="'+n+' star'+(n>1?"s":"")+'">'
+    + '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'"><path d="'+STAR+'"/></svg></button>').join("") + '</div>';
+}
+function sparkline(g){
+  const pts = g.visits.filter(v => avg(v) > 0).map(v => avg(v));
+  if (pts.length < 3) return "";
+  const w = 180, h = 34, pad = 3;
+  const step = (w - pad*2) / (pts.length - 1);
+  const y = s => pad + (5 - s) / 4 * (h - pad*2);
+  const d = pts.map((s,i) => (pad + i*step).toFixed(1) + "," + y(s).toFixed(1)).join(" ");
+  let dots = pts.map((s,i) => '<circle cx="'+(pad+i*step).toFixed(1)+'" cy="'+y(s).toFixed(1)+'" r="2.5" fill="var(--accent)"/>').join("");
+  return '<div class="spark"><svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Overall rating across '+pts.length+' visits">'
+    + '<polyline points="'+d+'" fill="none" stroke="var(--accent)" stroke-width="1.5"/>' + dots + '</svg></div>';
+}
+function toast(msg){
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+function fmtDate(d){
+  if (!d) return "";
+  const dt = new Date(d + "T00:00:00");
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+}
+
+/* ---------- render ---------- */
+function visible(){
+  const q = state.q.trim().toLowerCase();
+  let out = groups().filter(g => {
+    if (state.city && g.city !== state.city) return false;
+    if (state.drink && !statFor(g, state.drink)) return false;
+    if (state.tags.length && !state.tags.every(t => g.tags.includes(t))) return false;
+    if (!q) return true;
+    return g.visits.some(v => [v.name,v.city,v.area,v.address,v.order,v.notes,v.crowdNote,v.areaNote,v.parkNote]
+      .concat((v.drinks||[]).map(d => d.type)).join(" ").toLowerCase().includes(q));
+  });
+  const ds = g => state.drink ? statFor(g, state.drink) : null;
+  let domCur = "";
+  if (state.drink){
+    const tally = {};
+    out.forEach(g => { const t = ds(g); if (t && t.cur) tally[t.cur] = (tally[t.cur]||0)+1; });
+    domCur = Object.keys(tally).sort((a,b) => tally[b]-tally[a])[0] || "";
+  }
+  const by = {
+    recent: (a,b) => (b.lastDate||"").localeCompare(a.lastDate||""),
+    score:  (a,b) => b.mean - a.mean,
+    visits: (a,b) => b.count - a.count,
+    name:   (a,b) => (a.name||"").localeCompare(b.name||""),
+    price:  (a,b) => (Number(a.price)||9)-(Number(b.price)||9),
+    "drink-score": (a,b) => (((ds(b)||{}).avgScore)||0) - (((ds(a)||{}).avgScore)||0) || b.mean - a.mean,
+    "drink-price": (a,b) => {
+      const x = ds(a)||{}, y = ds(b)||{};
+      return ((x.cur===domCur?0:1) - (y.cur===domCur?0:1)) || ((x.avgPrice||Infinity) - (y.avgPrice||Infinity));
+    }
+  };
+  let mode = state.sort;
+  if (!state.drink && mode.indexOf("drink-") === 0) mode = mode === "drink-price" ? "price" : "score";
+  return out.sort(by[mode] || by.recent);
+}
+function renderTally(){
+  const gs = groups();
+  const cities = new Set(gs.map(g => g.city).filter(Boolean));
+  const rated = gs.filter(g => g.mean > 0);
+  const mean = rated.length ? (rated.reduce((s,g)=>s+g.mean,0)/rated.length).toFixed(1) : "—";
+  const best = rated.slice().sort((a,b)=>b.mean-a.mean)[0];
+  $("#tally").innerHTML =
+    '<span><b>'+gs.length+'</b> cafes</span>' +
+    '<span><b>'+store.length+'</b> visits</span>' +
+    '<span><b>'+cities.size+'</b> cities</span>' +
+    '<span>average <b>'+mean+'</b></span>' +
+    (best ? '<span>top of the list: <b>'+esc(best.name)+'</b></span>' : '') +
+    (local ? '<span class="note">saved in this browser</span>' : '');
+}
+function renderCityFilter(){
+  const cities = [...new Set(store.map(c => c.city).filter(Boolean))].sort();
+  const sel = $("#city"), cur = sel.value;
+  sel.innerHTML = '<option value="">All cities</option>' + cities.map(c=>'<option>'+esc(c)+'</option>').join("");
+  sel.value = cities.includes(cur) ? cur : "";
+  $("#cities").innerHTML = cities.map(c=>'<option value="'+esc(c)+'">').join("");
+}
+function renderDrinkFilter(){
+  const used = drinkCatalog().used;
+  const sel = $("#drink"), cur = sel.value;
+  sel.innerHTML = '<option value="">Any coffee</option>' + used.map(d=>'<option>'+esc(d)+'</option>').join("");
+  sel.value = used.includes(cur) ? cur : "";
+  state.drink = sel.value;
+  sel.disabled = !used.length;
+  const s = $("#sort");
+  [...s.options].forEach(o => { if (o.value.indexOf("drink-") === 0) o.disabled = !state.drink; });
+}
+function renderFilters(){
+  $("#filters").innerHTML = GOODFOR.map(t =>
+    '<button class="chip" type="button" data-tag="'+esc(t)+'" aria-pressed="'+state.tags.includes(t)+'">'+esc(t)+'</button>').join("");
+}
+function visitHTML(v, g){
+  const a = avg(v), sel = state.openVisit === v.id;
+  let h = '<div class="visit'+(sel?" sel":"")+'" data-visit="'+v.id+'">';
+  h += '<div class="visit-head"><span class="visit-date">'+esc(fmtDate(v.visited)||"Undated")+'</span>';
+  h += '<span class="visit-score">'+(a?a.toFixed(1):"–")+'</span></div>';
+  h += '<div class="meta" style="margin-top:4px">'+marks(a, 16)
+     + (v.verdict?'<span class="tag on">'+esc(VERDICTS[v.verdict]||v.verdict)+'</span>':"")
+     + (v.spend?'<span class="tag">'+esc(v.spend)+'</span>':"") + '</div>';
+  h += '<div class="visit-body">';
+  SCORES.forEach(([k,label]) => {
+    const n = Number(v.scores && v.scores[k]) || 0;
+    h += '<div class="scoreline"><span class="lbl">'+label+'</span>'+marks(n)+'<span>'+(n||"–")+'</span></div>';
+  });
+  const f = (t,val) => val ? '<div class="field" style="margin-top:10px"><h4>'+t+'</h4><p>'+esc(val)+'</p></div>' : "";
+  if ((v.drinks||[]).length){
+    h += '<div class="field" style="margin-top:10px"><h4>Coffee</h4><div class="dlist">'
+      + v.drinks.map(d => '<div class="dline"><b>'+esc(d.type)+'</b><span>'
+        + (Number(d.price) ? money(Number(d.price), v.currency) : "no price")
+        + '</span>' + (Number(d.score) ? marks(Number(d.score), 12) : "") + '</div>').join("")
+      + '</div></div>';
+  }
+  h += f("Notes", mergedNotes(v));
+  h += '<div class="actions">' + (mine(v) ? '<button type="button" class="small edit" data-id="'+v.id+'">Edit this visit</button>' : "") + '</div>';
+  h += '</div></div>';
+  return h;
+}
+function entryHTML(g){
+  const open = state.open === g.key, t = trend(g);
+  let h = '<article class="entry'+(open?" open":"")+'" data-key="'+esc(g.key)+'" tabindex="0" role="button" aria-expanded="'+open+'">';
+  h += '<div class="head"><div><h3 class="name">'+esc(g.name||"Untitled")+'</h3>';
+  h += '<div class="where">'+esc([g.area,g.city].filter(Boolean).join(", ")||"—")
+     + ' · '+g.count+(g.count===1?" visit":" visits")
+     + (g.lastDate?', last '+esc(fmtDate(g.lastDate)):"") + '</div></div>';
+  h += '<div class="overall">'+(g.mean?g.mean.toFixed(1):"–")+'<small>'+(g.price?curSym(g.latest.currency).trim().repeat(Number(g.price)):"")+'</small></div></div>';
+
+  const tags = [];
+  if (state.drink){
+    const s = statFor(g, state.drink);
+    if (s) tags.push('<span class="pricetag">'+esc(state.drink)+(s.avgPrice?' '+priceLabel(s):"")
+      +(s.avgScore?' \u00b7 '+s.avgScore.toFixed(1):"")+'</span>');
+  }
+  if (t !== null && Math.abs(t) >= 0.05)
+    tags.push('<span class="trend '+(t>0?"up":"down")+'">'+(t>0?"up ":"down ")+Math.abs(t).toFixed(1)+' since last visit</span>');
+  else if (t !== null) tags.push('<span class="trend">steady since last visit</span>');
+  if (g.latest.verdict) tags.push('<span class="tag on">'+esc(VERDICTS[g.latest.verdict]||g.latest.verdict)+'</span>');
+  g.tags.forEach(x => tags.push('<span class="tag">'+esc(x)+'</span>'));
+  if (tags.length) h += '<div class="meta">'+tags.join("")+'</div>';
+
+  h += '<div class="detail"><div class="cols"><div>';
+  SCORES.forEach(([k,label]) => {
+    const n = crit(g,k);
+    h += '<div class="scoreline"><span class="lbl">'+label+'</span>'+marks(n)+'<span>'+(n?n.toFixed(1):"–")+'</span></div>';
+  });
+  h += sparkline(g);
+  if (g.amen.length) h += '<div class="meta" style="margin-top:12px">'+g.amen.map(x=>'<span class="tag">'+esc(x)+'</span>').join("")+'</div>';
+  h += '</div><div>';
+  const L = g.latest;
+  const f = (t2,val) => val ? '<div class="field"><h4>'+t2+'</h4><p>'+esc(val)+'</p></div>' : "";
+  const hours = [L.opens,L.closes].filter(Boolean).join(" – ");
+  h += f("Hours", [hours, L.hoursNote].filter(Boolean).join(" · "));
+  h += f("Parking", [L.parking, L.parkNote].filter(Boolean).join(" · "));
+  h += f("Address", L.address);
+  if (L.map) h += '<div class="field"><h4>Map</h4><p><a href="'+esc(L.map)+'" target="_blank" rel="noopener noreferrer">Open in maps</a></p></div>';
+  h += f("Neighbourhood", L.areaNote);
+  const ds = drinkStats(g);
+  if (ds.length){
+    h += '<div class="field"><h4>Coffee, across visits</h4><div class="dlist">'
+      + ds.map(d => '<div class="dline"><b>'+esc(d.type)+'</b><span>'
+        + (d.avgPrice ? priceLabel(d) : "no price") 
+        + ' \u00b7 ' + d.n + '\u00d7</span>'
+        + (d.avgScore ? marks(d.avgScore, 12) : "") + '</div>').join("")
+      + '</div></div>';
+  }
+  h += '</div></div>';
+
+  h += '<div class="log"><h4>Visit log</h4>';
+  h += g.visits.slice().reverse().map(v => visitHTML(v,g)).join("");
+  h += '</div>';
+  const otherBook = personId() !== me.id;
+  h += '<div class="actions"><button type="button" class="primary again" data-key="'+esc(g.key)+'">'
+     + (otherBook ? "Add this cafe to your notebook" : "Log another visit here") + '</button>'
+     + '<button type="button" class="close-entry">Collapse</button></div>';
+  h += '</div></article>';
+  return h;
+}
+function feedItems(){
+  const q = state.q.trim().toLowerCase();
+  return store.slice().filter(v => {
+    if (state.city && v.city !== state.city) return false;
+    if (state.drink && !(v.drinks||[]).some(d => d.type === state.drink)) return false;
+    if (state.tags.length && !state.tags.every(t => (v.goodFor||[]).includes(t))) return false;
+    if (!q) return true;
+    return [v.name,v.city,v.area,v.order,v.notes,v.crowdNote,v.areaNote]
+      .concat((v.drinks||[]).map(d => d.type)).join(" ").toLowerCase().includes(q);
+  }).sort((a,b) => (b.visited||"").localeCompare(a.visited||"") || (b.updatedAt||0)-(a.updatedAt||0))
+    .slice(0, 80);
+}
+function feedHTML(v){
+  const uid = ownerOf(v), a = avg(v), own = !uid || uid === me.id;
+  let h = '<article class="fitem" data-feed="'+esc(v.cafeKey||"")+'" data-owner="'+esc(uid)+'">';
+  h += '<span class="fwho" data-uid="'+esc(uid)+'" aria-hidden="true">'+(own?"You":initials(uid))+'</span>';
+  h += '<div class="fbody">';
+  h += '<p class="fline"><span class="who" data-uid="'+esc(uid)+'">'+(own?"You":"Someone")+'</span> '
+     + 'logged <b>'+esc(v.name||"a cafe")+'</b></p>';
+  h += '<div class="fmeta"><span>'+esc([v.area,v.city].filter(Boolean).join(", ")||"no location")+'</span>'
+     + '<span>'+esc(fmtDate(v.visited)||"undated")+'</span>'
+     + (a ? '<span>'+marks(a,13)+'</span>' : '')
+     + (v.verdict ? '<span>'+esc(VERDICTS[v.verdict]||"")+'</span>' : '') + '</div>';
+  const dr = (v.drinks||[]).filter(d => d.type);
+  if (dr.length){
+    h += '<div class="fmeta">' + dr.map(d => '<span>'+esc(d.type)
+      + (Number(d.price) ? ' \u00b7 ' + money(Number(d.price), v.currency) : "")
+      + (Number(d.score) ? ' \u00b7 ' + d.score + '/5' : "") + '</span>').join("") + '</div>';
+  }
+  const note = mergedNotes(v);
+  if (note) h += '<p class="fnote">'+esc(note)+'</p>';
+  h += '</div></article>';
+  return h;
+}
+function renderFeed(list){
+  const rows = feedItems();
+  if (!rows.length){
+    list.innerHTML = '<div class="empty"><h3>Nothing here yet</h3><p>Log a visit, or clear the filters to see everything.</p></div>';
+    return;
+  }
+  list.innerHTML = rows.map(feedHTML).join("");
+}
+function profileHeader(){
+  const box = $("#profile");
+  if (state.view !== "cafes"){ box.innerHTML = ""; return; }
+  const uid = personId();
+  if (!uid){ box.innerHTML = ""; return; }
+  const own = uid === me.id, pr = prof(uid), st = statsFor(uid);
+  let h = '<div class="phead"><div class="ptop">';
+  h += '<span class="pav" data-uid="'+esc(uid)+'" aria-hidden="true">'+(own?"You":initials(uid))+'</span>';
+  h += '<div style="flex:1;min-width:0">';
+  h += '<h2 class="pname"><span data-uid="'+esc(uid)+'">'+(own?"Your notebook":"Someone")+'</span></h2>';
+  const bits = [handleOf(uid), pr.city, pr.order].filter(Boolean);
+  if (bits.length) h += '<div class="phandle">'+esc(bits.join("  \u00b7  "))+'</div>';
+  if (pr.tagline) h += '<p class="ptag">'+esc(pr.tagline)+'</p>';
+  if (pr.about) h += '<p class="ptag" style="color:var(--soft);font-size:15px">'+esc(pr.about)+'</p>';
+  h += '<div class="pstats"><span><b>'+st.cafes+'</b> cafes</span><span><b>'+st.visits+'</b> visits</span>'
+     + '<span><b>'+st.cities+'</b> cities</span><span>average <b>'+(st.mean?st.mean.toFixed(1):"\u2013")+'</b></span></div>';
+  h += '<div class="actions">'
+     + (own ? '<button type="button" class="small" id="btn-profile">Edit your profile</button>'
+            : '<button type="button" class="small" id="btn-back">Back to your notebook</button>')
+     + '</div>';
+  h += '</div></div></div>';
+  box.innerHTML = h;
+  if (own) $("#btn-profile").onclick = openProfile;
+  else $("#btn-back").onclick = () => { state.person = ""; state.open = null; render(); };
+}
+function renderPeople(list){
+  const ids = peopleIds().filter(id => id);
+  if (!ids.length){
+    list.innerHTML = '<div class="empty"><h3>No one else yet</h3><p>Share this with a friend and their notebook shows up here.</p></div>';
+    return;
+  }
+  ids.sort((a,b) => (statsFor(b).last||"").localeCompare(statsFor(a).last||""));
+  list.innerHTML = '<div class="people">' + ids.map(uid => {
+    const own = uid === me.id, st = statsFor(uid), pr = prof(uid);
+    return '<article class="pcard" data-person="'+esc(uid)+'">'
+      + '<span class="pav" data-uid="'+esc(uid)+'" aria-hidden="true">'+(own?"You":initials(uid))+'</span>'
+      + '<div style="flex:1;min-width:0">'
+      + '<h3 class="name"><span data-uid="'+esc(uid)+'">'+(own?"You":"Someone")+'</span></h3>'
+      + (handleOf(uid) ? '<div class="phandle">'+esc(handleOf(uid))+'</div>' : "")
+      + (pr.tagline ? '<p class="fnote" style="margin-top:5px">'+esc(pr.tagline)+'</p>' : "")
+      + '<div class="pstats" style="margin-top:8px"><span><b>'+st.cafes+'</b> cafes</span>'
+      + '<span><b>'+st.visits+'</b> visits</span>'
+      + '<span>avg <b>'+(st.mean?st.mean.toFixed(1):"\u2013")+'</b></span></div>'
+      + '</div></article>';
+  }).join("") + '</div>';
+}
+function render(){
+  renderTally(); renderCityFilter(); renderDrinkFilter(); renderFilters();
+  $("#tab-cafes").setAttribute("aria-selected", String(state.view === "cafes"));
+  $("#tab-feed").setAttribute("aria-selected", String(state.view === "feed"));
+  $("#tab-people").setAttribute("aria-selected", String(state.view === "people"));
+  $("#sort").disabled = state.view !== "cafes";
+  $("#tab-cafes").textContent = (state.person && state.person !== me.id) ? "Their notebook" : "Notebook";
+  const hasSample = store.some(v => v.sample) || Object.keys(profiles).some(id => profiles[id].sample);
+  $("#btn-sample").hidden = !hasSample;
+  profileHeader();
+  const list = $("#list");
+  if (state.view === "people"){ renderPeople(list); paintNames(); return; }
+  if (state.view === "feed"){ renderFeed(list); paintNames(); return; }
+  const rows = visible();
+  if (!scoped().length){
+    list.innerHTML = '<div class="empty"><h3>'+(personId()===me.id?"Nothing logged yet":"No entries here yet")+'</h3>'
+      + '<p>Start with the last cafe you sat in. Name, city, a few ratings — you can fill the rest later.</p>'
+      + (personId()===me.id ? '<button class="primary" id="btn-first">Log a visit</button>' : "") + '</div>';
+    const fb = $("#btn-first"); if (fb) fb.onclick = () => openNew();
+    paintNames();
+    return;
+  }
+  if (!rows.length){ list.innerHTML = '<div class="empty"><h3>No matches</h3><p>Clear the search or the filters to see everything again.</p></div>'; return; }
+  list.innerHTML = rows.map(entryHTML).join("");
+  paintNames();
+}
+
+/* ---------- editor ---------- */
+function blank(){
+  return {id:"c_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), cafeKey:"",
+    name:"",city:"",area:"",address:"",map:"",visited:new Date().toISOString().slice(0,10),
+    opens:"",closes:"",hoursNote:"",price:"",spend:"",currency:lastCurrency(),owner:me.id||"",
+    scores:{},goodFor:[],amenities:[],drinks:[],parking:"",parkNote:"",
+    areaNote:"",notes:"",verdict:"",updatedAt:Date.now()};
+}
+const FIELDS = {name:"f-name",city:"f-city",area:"f-area",visited:"f-visited",address:"f-address",map:"f-map",
+  opens:"f-opens",closes:"f-closes",price:"f-price",currency:"f-currency",hoursNote:"f-hoursnote",spend:"f-spend",
+  parking:"f-parking",parkNote:"f-parknote",areaNote:"f-areanote",
+  notes:"f-notes",verdict:"f-verdict"};
+
+function fillForm(){
+  if (!$("#f-currency").options.length) buildCurrencyOptions();
+  if (draft.order || draft.crowdNote){
+    draft.notes = mergedNotes(draft);
+    draft.order = ""; draft.crowdNote = "";
+  }
+  draft.currency = draft.currency || lastCurrency();
+  for (const k in FIELDS) document.getElementById(FIELDS[k]).value = draft[k] || "";
+  renderRates(); renderPicks(); renderDrinks(); renderLinked();
+}
+function renderRates(){
+  $("#rates").innerHTML = SCORES.map(([k,label]) => {
+    const v = Number(draft.scores[k])||0;
+    return '<div class="rate"><span>'+label+'</span>'
+      + starInput(n => 'data-score="'+k+'" data-v="'+n+'"', v, 26)
+      + '<em>'+(v||"\u2013")+'</em></div>';
+  }).join("");
+}
+function renderPicks(){
+  $("#f-goodfor").innerHTML = GOODFOR.map(t=>'<button class="chip" type="button" data-pick="goodFor" data-v="'+esc(t)+'" aria-pressed="'+draft.goodFor.includes(t)+'">'+esc(t)+'</button>').join("");
+  $("#f-amenities").innerHTML = AMENITIES.map(t=>'<button class="chip" type="button" data-pick="amenities" data-v="'+esc(t)+'" aria-pressed="'+draft.amenities.includes(t)+'">'+esc(t)+'</button>').join("");
+}
+function buildCurrencyOptions(){
+  const fav = CURRENCIES.filter(x => x.fav), rest = CURRENCIES.filter(x => !x.fav);
+  const opt = x => '<option value="'+x.c+'">'+esc(x.c+" \u00b7 "+x.n)+'</option>';
+  $("#f-currency").innerHTML =
+    '<optgroup label="Common for you">' + fav.map(opt).join("") + '</optgroup>'
+  + '<optgroup label="Everything else">' + rest.map(opt).join("") + '</optgroup>';
+}
+function renderDrinks(){
+  draft.drinks = draft.drinks || [];
+  const chosen = draft.drinks.map(d => d.type);
+  const cat = drinkCatalog().all.concat(chosen.filter(t => !drinkCatalog().all.includes(t)));
+  $("#f-drinkpicks").innerHTML = cat.map(t =>
+    '<button class="chip" type="button" data-drink="'+esc(t)+'" aria-pressed="'+chosen.includes(t)+'">'+esc(t)+'</button>').join("");
+  $("#f-drinks").innerHTML = draft.drinks.map((d,i) =>
+    '<div class="drow"><span class="dname">'+esc(d.type)+'</span>'
+    + '<span class="price"><i>'+esc(curSym(draft.currency))+'</i><input type="number" min="0" step="any" inputmode="decimal" data-price="'+i+'" value="'+(d.price||"")+'" aria-label="Price of '+esc(d.type)+'"></span>'
+    + starInput(n => 'data-dscore="'+i+'" data-v="'+n+'"', Number(d.score)||0, 20)
+    + '<button type="button" class="drop" data-drop="'+i+'" aria-label="Remove '+esc(d.type)+'">\u00d7</button></div>').join("");
+}
+function addDrink(type){
+  type = String(type||"").trim();
+  if (!type) return;
+  draft.drinks = draft.drinks || [];
+  const hit = draft.drinks.findIndex(d => norm(d.type) === norm(type));
+  if (hit > -1) draft.drinks.splice(hit,1);
+  else draft.drinks.push({type, price:"", score:0});
+  renderDrinks();
+}
+function renderLinked(){
+  const g = draft.cafeKey ? groups().find(x => x.key === draft.cafeKey) : null;
+  const box = $("#linked");
+  if (!g || state.editing){ box.hidden = true; return; }
+  box.hidden = false;
+  $("#linked-text").textContent = "Adding to " + g.name + " — " + g.count + (g.count===1?" visit logged":" visits logged") + " already";
+}
+function prefillFrom(g, fromOther){
+  const L = g.latest;
+  CARRY.forEach(k => { draft[k] = L[k] || ""; });
+  draft.goodFor = fromOther ? [] : (L.goodFor||[]).slice();
+  draft.amenities = (L.amenities||[]).slice();
+  draft.cafeKey = g.key;
+}
+function openNew(cafeKey, srcUid){
+  draft = blank(); state.editing = null;
+  if (cafeKey){
+    const own = groupsFor(me.id).find(x => x.key === cafeKey);
+    if (own) prefillFrom(own, false);
+    else if (srcUid && srcUid !== me.id){
+      const g = groupsFor(srcUid).find(x => x.key === cafeKey);
+      if (g) prefillFrom(g, true);
+    }
+  }
+  $("#form-title").textContent = cafeKey ? "New visit" : "New visit";
+  $("#btn-delete").hidden = true;
+  fillForm(); hideSuggest(); resetDelete();
+  $("#editor").showModal();
+  setTimeout(()=>$(cafeKey ? "#f-visited" : "#f-name").focus(), 30);
+}
+function openEdit(id){
+  const found = store.find(v => v.id === id); if (!found) return;
+  if (!mine(found)) return toast("That entry belongs to someone else");
+  draft = JSON.parse(JSON.stringify(found));
+  draft.scores = draft.scores||{}; draft.goodFor = draft.goodFor||[]; draft.amenities = draft.amenities||[];
+  state.editing = id;
+  $("#form-title").textContent = "Edit visit";
+  $("#btn-delete").hidden = false;
+  fillForm(); hideSuggest(); resetDelete();
+  $("#editor").showModal();
+}
+async function commit(){
+  for (const k in FIELDS) draft[k] = document.getElementById(FIELDS[k]).value.trim();
+  if (!draft.name){ $("#f-name").focus(); toast("Give it a name first"); return; }
+  draft.currency = draft.currency || DEFCUR;
+  draft.order = ""; draft.crowdNote = "";
+  if (!draft.owner && me.id) draft.owner = me.id;
+  draft.drinks = (draft.drinks||[]).filter(d => d.type)
+    .map(d => ({type:d.type, price: Number(d.price)||0, score: Number(d.score)||0}));
+  if (!draft.cafeKey) draft.cafeKey = keyOf(draft.name, draft.city);
+  draft.updatedAt = Date.now();
+  $("#btn-save").disabled = true;
+  try {
+    await saveVisit(draft);
+    state.open = draft.cafeKey; state.openVisit = draft.id;
+    $("#editor").close();
+    toast(state.editing ? "Visit updated" : "Visit saved");
+  } catch(e){ toast("Couldn't save. Try again."); }
+  finally { $("#btn-save").disabled = false; }
+}
+
+/* ---------- name suggestions ---------- */
+function hideSuggest(){ sugg = {items:[], idx:-1}; const s = $("#suggest"); s.hidden = true; s.innerHTML = ""; $("#f-name").setAttribute("aria-expanded","false"); }
+function showSuggest(){
+  if (state.editing) return hideSuggest();
+  const q = norm($("#f-name").value);
+  const all = groups();
+  const hits = (q ? all.filter(g => norm(g.name).includes(q)) : all)
+    .sort((a,b) => (norm(a.name).indexOf(q) - norm(b.name).indexOf(q)) || b.count - a.count)
+    .slice(0,6);
+  if (!hits.length) return hideSuggest();
+  sugg.items = hits; sugg.idx = -1;
+  $("#suggest").innerHTML = hits.map((g,i) =>
+    '<li role="option" aria-selected="false" data-i="'+i+'"><b>'+esc(g.name)+'</b>'
+    + '<em>'+esc([g.area,g.city].filter(Boolean).join(", ")||"no city set")+' · '+g.count+(g.count===1?" visit":" visits")
+    + (g.mean?' · avg '+g.mean.toFixed(1):"")+'</em></li>').join("");
+  $("#suggest").hidden = false;
+  $("#f-name").setAttribute("aria-expanded","true");
+}
+function pickSuggest(i){
+  const g = sugg.items[i]; if (!g) return;
+  prefillFrom(g);
+  draft.visited = draft.visited || new Date().toISOString().slice(0,10);
+  fillForm(); hideSuggest();
+  $("#f-visited").focus();
+  toast("Continuing the log for " + g.name);
+}
+function moveSuggest(d){
+  if ($("#suggest").hidden) return;
+  const n = sugg.items.length;
+  if (!n) return;
+  sugg.idx += d;
+  if (sugg.idx >= n) sugg.idx = -1;
+  if (sugg.idx < -1) sugg.idx = n - 1;
+  [...$("#suggest").children].forEach((li,i) => li.setAttribute("aria-selected", String(i === sugg.idx)));
+}
+
+function openProfile(){
+  if (!me.id) return toast("Profiles need a signed-in account");
+  const pr = prof(me.id);
+  $("#pf-handle").value = pr.handle || "";
+  $("#pf-city").value = pr.city || "";
+  $("#pf-tagline").value = pr.tagline || "";
+  $("#pf-order").value = pr.order || "";
+  $("#pf-about").value = pr.about || "";
+  $("#profedit").showModal();
+  setTimeout(()=>$("#pf-handle").focus(), 30);
+}
+async function commitProfile(){
+  const data = {
+    handle: $("#pf-handle").value.trim().replace(/^@/,"").replace(/\s+/g,""),
+    city: $("#pf-city").value.trim(),
+    tagline: $("#pf-tagline").value.trim(),
+    order: $("#pf-order").value.trim(),
+    about: $("#pf-about").value.trim(),
+    updatedAt: Date.now()
+  };
+  $("#pf-save").disabled = true;
+  try { await saveProfile(data); $("#profedit").close(); toast("Profile saved"); }
+  catch(e){ toast("Couldn't save your profile"); }
+  finally { $("#pf-save").disabled = false; }
+}
+$("#pf-save").onclick = commitProfile;
+$("#pf-cancel").onclick = () => $("#profedit").close();
+$("#pf-close").onclick = () => $("#profedit").close();
+
+/* ---------- events ---------- */
+$("#btn-new").onclick = () => { state.person = ""; openNew(); };
+$("#btn-cancel").onclick = () => $("#editor").close();
+$("#btn-close").onclick = () => $("#editor").close();
+$("#btn-save").onclick = commit;
+$("#btn-unlink").onclick = () => { draft.cafeKey = ""; renderLinked(); toast("This will be logged as a separate cafe"); };
+let delTimer = null;
+function resetDelete(){
+  clearTimeout(delTimer); delTimer = null;
+  const b = $("#btn-delete");
+  b.classList.remove("armed"); b.textContent = "Delete this visit";
+}
+$("#btn-delete").onclick = async () => {
+  if (!state.editing) return;
+  const b = $("#btn-delete");
+  if (!b.classList.contains("armed")){
+    b.classList.add("armed"); b.textContent = "Tap again to delete";
+    delTimer = setTimeout(resetDelete, 5000);
+    return;
+  }
+  resetDelete();
+  b.disabled = true;
+  try {
+    await removeVisit(state.editing);
+    state.openVisit = null;
+    $("#editor").close();
+    toast("Visit deleted");
+  } catch(e){ toast("Couldn't delete it. Try again."); }
+  finally { b.disabled = false; }
+};
+$("#editor").addEventListener("close", resetDelete);
+$("#form").addEventListener("submit", e => { e.preventDefault(); commit(); });
+
+$("#f-name").addEventListener("input", () => { draft.cafeKey = ""; renderLinked(); showSuggest(); });
+$("#f-name").addEventListener("focus", showSuggest);
+$("#f-name").addEventListener("blur", () => setTimeout(hideSuggest, 160));
+$("#f-name").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown"){ e.preventDefault(); if ($("#suggest").hidden) showSuggest(); else moveSuggest(1); }
+  else if (e.key === "ArrowUp"){ e.preventDefault(); moveSuggest(-1); }
+  else if (e.key === "Enter" && !$("#suggest").hidden && sugg.idx > -1){ e.preventDefault(); pickSuggest(sugg.idx); }
+  else if (e.key === "Escape" && !$("#suggest").hidden){ e.stopPropagation(); hideSuggest(); }
+});
+$("#suggest").addEventListener("mousedown", e => {
+  const li = e.target.closest("[data-i]"); if (!li) return;
+  e.preventDefault(); pickSuggest(Number(li.dataset.i));
+});
+
+$("#editor").addEventListener("click", e => {
+  const s = e.target.closest("[data-score]");
+  if (s){ const k = s.dataset.score, v = Number(s.dataset.v);
+    draft.scores[k] = draft.scores[k] === v ? 0 : v; renderRates(); return; }
+  const p = e.target.closest("[data-pick]");
+  if (p){ const list = draft[p.dataset.pick], v = p.dataset.v;
+    const i = list.indexOf(v); i > -1 ? list.splice(i,1) : list.push(v); renderPicks(); return; }
+  const dk = e.target.closest("[data-drink]");
+  if (dk){ addDrink(dk.dataset.drink); return; }
+  const dsc = e.target.closest("[data-dscore]");
+  if (dsc){ const d = draft.drinks[Number(dsc.dataset.dscore)], v = Number(dsc.dataset.v);
+    if (d){ d.score = Number(d.score) === v ? 0 : v; renderDrinks(); } return; }
+  const dp = e.target.closest("[data-drop]");
+  if (dp){ draft.drinks.splice(Number(dp.dataset.drop),1); renderDrinks(); }
+});
+$("#editor").addEventListener("input", e => {
+  const pr = e.target.closest("[data-price]");
+  if (pr){ const d = draft.drinks[Number(pr.dataset.price)]; if (d) d.price = pr.value === "" ? "" : Number(pr.value); }
+});
+$("#btn-adddrink").onclick = () => { addDrink($("#f-newdrink").value); $("#f-newdrink").value = ""; $("#f-newdrink").focus(); };
+$("#f-newdrink").addEventListener("keydown", e => {
+  if (e.key === "Enter"){ e.preventDefault(); addDrink(e.target.value); e.target.value = ""; }
+});
+$("#drink").addEventListener("change", e => { state.drink = e.target.value; render(); });
+function goHome(){
+  state.person = ""; state.view = "cafes";
+  state.open = null; state.openVisit = null;
+  state.q = ""; $("#q").value = "";
+  render(); window.scrollTo({top:0, behavior:"smooth"});
+}
+$("#btn-home").onclick = goHome;
+document.querySelector(".masthead h1").addEventListener("click", goHome);
+document.querySelector(".masthead h1").style.cursor = "pointer";
+$("#tab-cafes").onclick = () => { state.view = "cafes"; render(); };
+$("#tab-feed").onclick = () => { state.view = "feed"; state.open = null; render(); };
+$("#tab-people").onclick = () => { state.view = "people"; state.open = null; render(); };
+function goPerson(uid){
+  state.person = (uid && uid !== me.id) ? uid : "";
+  state.view = "cafes"; state.open = null; state.openVisit = null;
+  render(); window.scrollTo({top:0, behavior:"smooth"});
+}
+$("#f-currency").addEventListener("change", e => { draft.currency = e.target.value; renderDrinks(); });
+
+$("#list").addEventListener("click", e => {
+  const pc = e.target.closest("[data-person]");
+  if (pc){ goPerson(pc.dataset.person); return; }
+  const av = e.target.closest(".fwho, .fline [data-uid]");
+  if (av){ e.stopPropagation(); goPerson(av.dataset.uid); return; }
+  const fi = e.target.closest("[data-feed]");
+  if (fi){
+    state.person = (fi.dataset.owner && fi.dataset.owner !== me.id) ? fi.dataset.owner : "";
+    state.view = "cafes"; state.open = fi.dataset.feed; state.openVisit = null; render();
+    window.scrollTo({top:0, behavior:"smooth"}); return; }
+  const ed = e.target.closest(".edit");
+  if (ed){ e.stopPropagation(); openEdit(ed.dataset.id); return; }
+  const ag = e.target.closest(".again");
+  if (ag){
+    e.stopPropagation();
+    const key = ag.dataset.key, src = personId();
+    if (src !== me.id){ state.person = ""; state.open = key; state.openVisit = null; render(); }
+    openNew(key, src);
+    return;
+  }
+  const cl = e.target.closest(".close-entry");
+  if (cl){ e.stopPropagation(); state.open = null; state.openVisit = null; render(); return; }
+  const vs = e.target.closest(".visit-head");
+  if (vs){ e.stopPropagation(); const id = vs.closest("[data-visit]").dataset.visit;
+    state.openVisit = state.openVisit === id ? null : id; render(); return; }
+  const card = e.target.closest(".entry");
+  if (!card || e.target.closest("a") || card.classList.contains("open")) return;
+  state.open = card.dataset.key; state.openVisit = null; render();
+});
+$("#list").addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("entry")){ e.preventDefault(); e.target.click(); }
+});
+$("#filters").addEventListener("click", e => {
+  const b = e.target.closest("[data-tag]"); if (!b) return;
+  const t = b.dataset.tag, i = state.tags.indexOf(t);
+  i > -1 ? state.tags.splice(i,1) : state.tags.push(t);
+  render();
+});
+$("#q").addEventListener("input", e => { state.q = e.target.value; render(); });
+$("#city").addEventListener("change", e => { state.city = e.target.value; render(); });
+$("#sort").addEventListener("change", e => { state.sort = e.target.value; render(); });
+let sampleTimer = null;
+function resetSample(){
+  clearTimeout(sampleTimer); sampleTimer = null;
+  const b = $("#btn-sample"); b.classList.remove("armed"); b.textContent = "Remove sample data";
+}
+$("#btn-sample").onclick = async () => {
+  const b = $("#btn-sample");
+  if (!b.classList.contains("armed")){
+    b.classList.add("armed"); b.textContent = "Tap again to remove";
+    sampleTimer = setTimeout(resetSample, 5000); return;
+  }
+  resetSample(); b.disabled = true;
+  try {
+    for (const v of store.filter(x => x.sample)) await removeVisit(v.id);
+    for (const id of Object.keys(profiles)) if (profiles[id].sample){
+      if (db && !local) await db.collection("profiles").doc(id).delete(); else delete profiles[id];
+    }
+    state.person = ""; state.view = "cafes";
+    toast("Sample data removed"); render();
+  } catch(e){ toast("Couldn't remove all of it"); }
+  finally { b.disabled = false; }
+};
+$("#btn-theme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+};
+$("#btn-export").onclick = async () => {
+  if (!store.length) return toast("Nothing to export yet");
+  const data = JSON.stringify(store, null, 2);
+  let dl = null;
+  try { dl = await claude.use("downloads"); } catch(e){}
+  if (!dl) return toast("Downloads aren't available here");
+  try { await dl.save({filename:"beanbud-"+new Date().toISOString().slice(0,10)+".json", data}); }
+  catch(err){ if (err && err.code !== "declined") toast("Export didn't go through"); }
+};
+
+render();
+initStore();
+initUser();
+</script>
+</body>
+</html>
