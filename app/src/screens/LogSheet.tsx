@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { StarInput } from '../components/StarInput'
-import { Link } from 'react-router-dom'
-import { newCafeProblem } from '../lib/cafeRules'
+import { checkDetailsUpdate, newCafeProblem, type DetailsCheck } from '../lib/cafeRules'
+import { ConfirmCafeUpdate } from '../components/ConfirmCafeUpdate'
 import { similarCafes } from '../lib/similar'
 import { deleteVisit, listCafes, myDrinkTypes, saveVisit } from '../data/visits'
 import {
@@ -74,6 +74,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
 
   const [cafes, setCafes] = useState<Cafe[]>([])
   const [cafesLoaded, setCafesLoaded] = useState(false)
+  const [confirm, setConfirm] = useState<DetailsCheck | null>(null)   // set while asking whether to update the directory
   const [history, setHistory] = useState<string[]>([])
   const [showSuggest, setShowSuggest] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -162,26 +163,24 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
     }
   }
 
-  async function save() {
-    setError('')
-    if (!name.trim()) return setError('Give the cafe a name.')
-    if (!city.trim()) return setError('Add the city. It tells same-named cafes apart.')
-    if (!visitedOn) return setError('Pick the date of this visit.')
-    if (isNewCafe) {
-      const problem = newCafeProblem(address, mapUrl)
-      if (problem) return setError(problem)
-    }
-
+  /** Validates and builds what will be sent. Returns null (and shows why) if something is wrong. */
+  function buildInput(updateDetails: boolean): VisitInput | null {
     const parsedDrinks: VisitInput['drinks'] = []
     for (const d of drinks) {
       const raw = d.price.trim()
       const price = raw === '' ? null : Number(raw)
-      if (price !== null && (!Number.isFinite(price) || price < 0)) return setError(`Check the price for ${d.type}.`)
+      if (price !== null && (!Number.isFinite(price) || price < 0)) { setError(`Check the price for ${d.type}.`); return null }
       parsedDrinks.push({ drink_type: d.type, price, score: d.score })
     }
-
-    const input: VisitInput = {
-      cafe: { name: name.trim(), city: city.trim(), area: area.trim(), address: address.trim(), map_url: mapUrl.trim() },
+    // An existing cafe: a blank box keeps the saved value. Only a CONFIRMED real change updates the directory.
+    const eff = existing ? checkDetailsUpdate(existing, address, mapUrl) : null
+    return {
+      cafe: {
+        name: name.trim(), city: city.trim(), area: area.trim(),
+        address: eff ? eff.address : address.trim(),
+        map_url: eff ? eff.mapUrl : mapUrl.trim(),
+        update_details: updateDetails && !!eff?.canUpdate,
+      },
       visit: {
         visited_on: visitedOn,
         score_ambiance: scores.ambiance, score_drinks: scores.drinks, score_food: scores.food,
@@ -194,16 +193,40 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
       drinks: parsedDrinks,
       notes: notes.trim(),
     }
+  }
 
+  async function commit(updateDetails: boolean) {
+    const input = buildInput(updateDetails)
+    if (!input) { setConfirm(null); return }
     setSaving(true)
     try {
       await saveVisit(input, editing?.id)
       rememberCurrency(currency)
       onSaved()
     } catch (e) {
+      setConfirm(null)
       setError(e instanceof Error ? e.message : 'Could not save. Try again.')
       setSaving(false)
     }
+  }
+
+  async function save() {
+    setError('')
+    if (!name.trim()) return setError('Give the cafe a name.')
+    if (!city.trim()) return setError('Add the city. It tells same-named cafes apart.')
+    if (!visitedOn) return setError('Pick the date of this visit.')
+    if (isNewCafe) {
+      const problem = newCafeProblem(address, mapUrl)
+      if (problem) return setError(problem)
+    }
+    if (!buildInput(false)) return   // shows what is wrong (for example a price)
+
+    if (existing) {
+      const check = checkDetailsUpdate(existing, address, mapUrl)
+      if (check.problem) return setError(check.problem)
+      if (check.canUpdate) { setConfirm(check); return }   // a real change: ask before it touches the directory
+    }
+    await commit(false)
   }
 
   return (
@@ -257,16 +280,20 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
 
           {existing && (
             <section className="panel">
-              <span className="field-label">This cafe in the directory</span>
-              <div className="locked-value">
-                {existing.code && <span className="code">{existing.code}</span>}
-                <span><b>Address:</b> {existing.address || 'not saved yet'}</span>
-                <span><b>Map link:</b> {existing.map_url || 'not saved yet'}</span>
-                <span className="hint">
-                  Filled in for you. To change these, use “Edit cafe” on{' '}
-                  <Link to={`/cafes/${existing.id}`} onClick={onClose}>the cafe's page</Link>; every change is recorded.
-                </span>
-              </div>
+              <span className="field-label">This cafe in the directory {existing.code && <span className="code">{existing.code}</span>}</span>
+              <label className="field-label" htmlFor="f-address">Address</label>
+              <input id="f-address" className="input sm" value={address} placeholder="Street, building, area"
+                onChange={(e) => setAddress(e.target.value)}
+                onBlur={() => { if (!address.trim() && existing.address) setAddress(existing.address) }} />
+              <label className="field-label" htmlFor="f-map">Map link</label>
+              <input id="f-map" type="url" className="input sm" value={mapUrl} placeholder="https://maps.app.goo.gl/…"
+                onChange={(e) => setMapUrl(e.target.value)}
+                onBlur={() => { if (!mapUrl.trim() && existing.map_url) setMapUrl(existing.map_url) }} />
+              <span className="hint">
+                {!existing.address || !existing.map_url
+                  ? "This cafe is missing its address or map link. Add both to complete its page. You'll be asked to confirm."
+                  : "Filled in from the directory. If something is out of date, fix it here: you'll be asked to confirm before it changes the cafe's page for everyone. An empty box keeps what's saved."}
+              </span>
             </section>
           )}
 
@@ -409,6 +436,12 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
           )}
         </div>
       </div>
+      {confirm && existing && (
+        <ConfirmCafeUpdate
+          cafeName={existing.name} saved={existing} check={confirm} busy={saving}
+          onConfirm={() => commit(true)} onSkip={() => commit(false)} onBack={() => setConfirm(null)}
+        />
+      )}
     </div>
   )
 }

@@ -260,3 +260,11 @@ textarea.input.area.short { min-height: 70px; }
 .similar { background: var(--surf2); border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .similar-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 8px 12px; cursor: pointer; }
 .similar-row:hover { border-color: var(--acc); }
+
+/* ---- centred dialog (confirm a directory update) ---- */
+.center-overlay { align-items: center; padding: 20px; z-index: 20; }
+.dialog { background: var(--bg); width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; border-radius: 28px; padding: 22px 20px; display: flex; flex-direction: column; gap: 12px; }
+.change-list { display: flex; flex-direction: column; gap: 8px; }
+.change { background: var(--surf); border-radius: 18px; padding: 10px 14px; display: flex; flex-direction: column; gap: 3px; overflow-wrap: anywhere; font-size: 13px; }
+.change .was { color: var(--mut); text-decoration: line-through; }
+.change .now { font-weight: 600; }

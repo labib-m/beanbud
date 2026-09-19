@@ -72,7 +72,7 @@ export function currencySymbol(code: string): string {
 
 /** Input the Log sheet hands to save_visit. Numbers are null when unset. */
 export type VisitInput = {
-  cafe: { name: string; city: string; area: string; address: string; map_url: string }
+  cafe: { name: string; city: string; area: string; address: string; map_url: string; update_details: boolean }
   visit: {
     visited_on: string
     score_ambiance: number | null

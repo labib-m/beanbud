@@ -38,8 +38,9 @@ Run these in the Supabase SQL editor, in order, pasting each whole file:
 5. `supabase/migrations/20260920000100_cafe_cleanup.sql`
 6. `supabase/migrations/20260920000200_save_visit_cafe_edit.sql`
 7. `supabase/migrations/20260920000300_cafe_directory.sql` (undoes 5 and 6, which were a stop-gap)
+8. `supabase/migrations/20260920000400_save_visit_update_details.sql`
 
-Then run the checks in `supabase/tests/`. Each ends with `ALL CHECKS PASSED`. They test the **latest** rules, so run them after all the migrations: `rls_check.sql`, `save_visit_check.sql`, `pin_attempts_check.sql`, `cafe_directory_check.sql`.
+Then run the checks in `supabase/tests/`. Each ends with `ALL CHECKS PASSED`. They test the **latest** rules, so run them after all the migrations: `rls_check.sql`, `save_visit_check.sql`, `pin_attempts_check.sql`, `cafe_directory_check.sql`, `save_visit_update_check.sql`.
 
 ## Cafes, the directory and page history
 
@@ -47,6 +48,7 @@ Then run the checks in `supabase/tests/`. Each ends with `ALL CHECKS PASSED`. Th
 - **A new cafe needs an address and a map link** before the first visit there can be saved. Picking an existing cafe from the dropdown fills everything in, so later visits are quick.
 - **Each cafe has a permanent readable code** such as `DOSE_DHA_BAN` (name, city, neighbourhood; a clash gets a number, e.g. `DOSE2_DHA_BAN`).
 - **Anyone signed in can use "Edit cafe"** to change a cafe's address and map link (both must stay filled in). Name, city and neighbourhood identify the cafe and are fixed.
+- **Correcting a cafe while logging a visit.** For an existing cafe the address and map link are pre-filled in the visit form and can be changed there. An emptied box never erases what is saved: it comes back, and if you save with it blank the visit still saves and the directory is untouched. A real change asks you to confirm before it updates the shared page ("Update the directory and save", "Save my visit only", or "Keep editing"); if you confirm, it is recorded in the cafe's page history under your name, and that visit is logged under the updated details.
 - **Every edit is recorded** in the cafe's page history: who, when, old and new value. A database trigger writes it, so no code path can skip it. Clients cannot write, change or delete history.
 - **Past entries never change.** Each visit remembers which version of the cafe's details it was logged under; new visits use the newest.
 - **Cafes are never deleted** when their visits are, so the directory grows from what people log.
