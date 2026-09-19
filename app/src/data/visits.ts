@@ -27,7 +27,7 @@ function friendlyError(e: { code?: string; message: string }): string {
 export async function listCafes(): Promise<Cafe[]> {
   const { data, error } = await supabase
     .from('cafes')
-    .select('id, name, city, area, address, map_url')
+    .select('id, name, city, area, address, map_url, created_by')
     .order('name')
     .limit(1000)
   if (error) throw new Error(error.message)

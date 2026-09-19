@@ -9,6 +9,7 @@ export type Cafe = {
   area: string
   address: string | null
   map_url: string | null
+  created_by?: string | null // who added the cafe (only they can change an address that is already saved)
 }
 
 export type ScoreKey = 'ambiance' | 'drinks' | 'food' | 'service' | 'crowd'

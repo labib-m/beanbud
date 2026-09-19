@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { StarInput } from '../components/StarInput'
+import { cafeFieldLocks } from '../lib/cafeRules'
 import { deleteVisit, listCafes, myDrinkTypes, saveVisit } from '../data/visits'
 import {
   AMENITIES, CURRENCIES, DEFAULT_DRINKS, GOOD_FOR, PARKING, PRICE_BANDS, SCORES, VERDICTS,
@@ -97,6 +98,20 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
     () => cafes.find((c) => norm(c.name) === norm(name) && norm(c.city) === norm(city) && norm(c.area) === norm(area)),
     [cafes, name, city, area],
   )
+
+  // Address and map link belong to the cafe, not the visit:
+  //  * a BLANK one can be filled in by anyone;
+  //  * one that is already saved can only be changed by whoever added the cafe.
+  const { addressLocked, mapLocked } = cafeFieldLocks(existing, userId)
+
+  // When the name / city / neighbourhood match a cafe that already exists, show what is saved.
+  useEffect(() => {
+    if (existing) {
+      setAddress(existing.address ?? '')
+      setMapUrl(existing.map_url ?? '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing?.id])
 
   function pickCafe(c: Cafe) {
     setName(c.name); setCity(c.city); setArea(c.area)
@@ -281,20 +296,23 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
           {more && (
             <>
               <section className="panel">
-                {existing ? (
-                  <p className="hint locked">
-                    {existing.address || existing.map_url
-                      ? 'Address and map link come from whoever added this cafe, and can only be changed by them.'
-                      : 'No address is saved for this cafe yet. Only whoever added it can add one.'}
-                    {existing.address && <><br /><strong>{existing.address}</strong></>}
+                <label className="field-label" htmlFor="f-address">Address</label>
+                {addressLocked ? (
+                  <p className="locked-value">
+                    {existing?.address}
+                    <span className="hint">Saved when the cafe was added. Only the person who added it can change it.</span>
                   </p>
                 ) : (
-                  <>
-                    <label className="field-label" htmlFor="f-address">Address</label>
-                    <input id="f-address" className="input sm" value={address} onChange={(e) => setAddress(e.target.value)} />
-                    <label className="field-label" htmlFor="f-map">Map link</label>
-                    <input id="f-map" type="url" className="input sm" value={mapUrl} placeholder="https://maps.app.goo.gl/…" onChange={(e) => setMapUrl(e.target.value)} />
-                  </>
+                  <input id="f-address" className="input sm" value={address} onChange={(e) => setAddress(e.target.value)} />
+                )}
+                <label className="field-label" htmlFor="f-map">Map link</label>
+                {mapLocked ? (
+                  <p className="locked-value">
+                    {existing?.map_url}
+                    <span className="hint">Saved when the cafe was added. Only the person who added it can change it.</span>
+                  </p>
+                ) : (
+                  <input id="f-map" type="url" className="input sm" value={mapUrl} placeholder="https://maps.app.goo.gl/…" onChange={(e) => setMapUrl(e.target.value)} />
                 )}
                 <div className="row2">
                   <div><label className="field-label" htmlFor="f-opens">Opens</label><input id="f-opens" type="time" className="input sm" value={opens} onChange={(e) => setOpens(e.target.value)} /></div>
