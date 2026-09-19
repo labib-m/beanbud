@@ -16,7 +16,6 @@
 
 import { readFileSync } from 'node:fs'
 import { randomInt } from 'node:crypto'
-import { createInterface } from 'node:readline'
 import { fileURLToPath } from 'node:url'
 
 const PIN_LENGTH = 4 // keep in step with the function and the app
@@ -59,16 +58,30 @@ if (!new RegExp('^\\d{' + PIN_LENGTH + '}$').test(pin)) fail('The PIN must be ex
 function askHidden(prompt) {
   if (!process.stdin.isTTY) return Promise.resolve('')
   return new Promise((resolve) => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true })
-    rl._writeToOutput = (s) => {
-      // show the question, but echo nothing while the key is typed
-      if (s.includes(prompt)) process.stdout.write(s)
-    }
-    rl.question(prompt, (answer) => {
-      rl.close()
+    let typed = ''
+    process.stdout.write(prompt)
+    process.stdin.setRawMode(true) // keystrokes come to us directly; the terminal echoes nothing
+    process.stdin.resume()
+    process.stdin.setEncoding('utf8')
+
+    function finish(value) {
+      process.stdin.removeListener('data', onData)
+      process.stdin.setRawMode(false)
+      process.stdin.pause()
       process.stdout.write('\n')
-      resolve(answer.trim())
-    })
+      resolve(value)
+    }
+    function onData(chunk) {
+      // a paste arrives as one chunk, so walk it character by character
+      for (const ch of chunk) {
+        const code = ch.charCodeAt(0)
+        if (ch === '\r' || ch === '\n') return finish(typed.trim())
+        if (code === 3) { process.stdout.write('\n'); process.exit(130) } // Ctrl+C
+        if (code === 127 || code === 8) typed = typed.slice(0, -1) // Backspace
+        else if (code >= 32) typed += ch
+      }
+    }
+    process.stdin.on('data', onData)
   })
 }
 const adminKey = env.ADMIN_KEY || (await askHidden('Admin key (hidden): '))
@@ -76,11 +89,16 @@ if (!adminKey) fail('No admin key. Set ADMIN_KEY in the environment, or run this
 
 // --- do it
 const target = who.includes('@') && !who.startsWith('@') ? { email: who } : { username: who.replace(/^@/, '') }
-const res = await fetch(url + '/functions/v1/pin-auth', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', apikey: anon, Authorization: 'Bearer ' + anon },
-  body: JSON.stringify({ action: 'admin-reset-pin', admin_key: adminKey, pin, ...target }),
-})
+let res
+try {
+  res = await fetch(url + '/functions/v1/pin-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: anon, Authorization: 'Bearer ' + anon },
+    body: JSON.stringify({ action: 'admin-reset-pin', admin_key: adminKey, pin, ...target }),
+  })
+} catch {
+  fail('Could not reach ' + url + '. Check your internet connection.')
+}
 const body = await res.json().catch(() => ({}))
 
 if (res.ok && body.ok) {
