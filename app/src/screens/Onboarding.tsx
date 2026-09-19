@@ -6,7 +6,7 @@ import type { Profile } from '../lib/types'
 
 type Check = 'idle' | 'checking' | 'free' | 'taken' | 'invalid'
 
-export function Onboarding({ profile, email, onDone }: { profile: Profile; email: string; onDone: () => void }) {
+export function Onboarding({ profile, onDone }: { profile: Profile; onDone: () => void }) {
   const [displayName, setDisplayName] = useState(profile.display_name ?? '')
   const [handle, setHandle] = useState(profile.handle ?? '')
   const [avatar, setAvatar] = useState<string | null>(profile.avatar ?? 'bean')
@@ -56,7 +56,7 @@ export function Onboarding({ profile, email, onDone }: { profile: Profile; email
   }
 
   const hint: Record<Check, string> = {
-    idle: 'This is how friends find you, and you can sign in with it.',
+    idle: 'This is how friends find you, and how you sign in.',
     checking: 'Checking…',
     free: 'Available.',
     taken: 'Already taken.',
@@ -91,12 +91,10 @@ export function Onboarding({ profile, email, onDone }: { profile: Profile; email
           value={handle} placeholder="nabs" aria-describedby="ob-hint" onChange={(e) => setHandle(e.target.value)} />
         <p id="ob-hint" className={`hint-line ${check}`}>{hint[check]}</p>
 
-        <p className="muted small">
-          Your username is tied to <strong>{email}</strong>. Next time you can sign in with either one.
-        </p>
+        <p className="muted small">You sign in with your username and PIN. Only your username is public.</p>
 
         <button className="btn primary" type="submit" disabled={saving || check === 'taken' || check === 'checking'}>
-          {saving ? 'Saving…' : 'Start my notebook'}
+          {saving ? 'Saving…' : 'Continue'}
         </button>
       </form>
     </main>

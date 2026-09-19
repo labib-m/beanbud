@@ -43,7 +43,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.screen { max-width: 430px; margin: 0 auto; padding: 22px 20px 96px; min-height: 100vh; }
+.screen { max-width: 430px; margin: 0 auto; padding: 22px 20px calc(96px + env(safe-area-inset-bottom)); min-height: 100vh; }
 .screen.center { display: flex; flex-direction: column; justify-content: center; gap: 14px; padding-bottom: 22px; }
 .stack { display: flex; flex-direction: column; gap: 11px; }
 
@@ -121,7 +121,7 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .btn.wide { align-self: stretch; text-align: center; }
 
 /* ---- tab bar ---- */
-.tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--surf); border-radius: 26px 26px 0 0; padding: 11px 22px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 5; }
+.tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--surf); border-radius: 26px 26px 0 0; padding: 11px 22px calc(16px + env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: center; z-index: 5; }
 .tab { color: var(--mut); font-weight: 600; font-size: 12px; text-decoration: none; padding: 10px 6px; }
 .tab.active { color: var(--acc); }
 .fab { width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--acc); color: var(--accInk); font: 400 30px/1 var(--text); cursor: pointer; margin-top: -30px; box-shadow: 0 6px 16px rgba(46, 43, 37, 0.32); }
@@ -223,3 +223,9 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .hint-line { margin: -4px 0 0 6px; font-size: 12px; color: var(--mut); }
 .hint-line.free { color: var(--sageDeep); }
 .hint-line.taken, .hint-line.invalid { color: var(--err); }
+
+/* ---- PIN entry ---- */
+.input.pin { text-align: center; letter-spacing: 0.5em; font-size: 22px; }
+.input.pin::placeholder { letter-spacing: 0.5em; }
+.row-links { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.note-box { background: var(--surf); border-radius: 18px; padding: 12px 14px; font-size: 13px; }

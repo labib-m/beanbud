@@ -13,11 +13,12 @@ import { Notebook } from './screens/Notebook'
 import { People } from './screens/People'
 import { PersonProfile } from './screens/PersonProfile'
 import { Placeholder } from './screens/Placeholder'
+import { SetPin } from './screens/SetPin'
 import { SignIn } from './screens/SignIn'
 import { You } from './screens/You'
 
 /** Holds the app back until the person has chosen a username and display name. */
-function ProfileGate({ userId, email, children }: { userId: string; email: string; children: ReactNode }) {
+function ProfileGate({ userId, hasPin, mustChangePin, children }: { userId: string; hasPin: boolean; mustChangePin: boolean; children: ReactNode }) {
   const [tick, setTick] = useState(0)
   const { data: profile, error, loading } = useLoad(() => fetchMyProfile(userId), [userId, tick])
 
@@ -33,7 +34,15 @@ function ProfileGate({ userId, email, children }: { userId: string; email: strin
 
   const p = profile ?? emptyProfile(userId)
   if (!p.handle || !p.display_name) {
-    return <Onboarding profile={p} email={email} onDone={() => setTick((t) => t + 1)} />
+    return <Onboarding profile={p} onDone={() => setTick((t) => t + 1)} />
+  }
+  // No PIN yet (an older account), or the developer just gave them a temporary one.
+  if (!hasPin || mustChangePin) {
+    return (
+      <main className="screen center">
+        <SetPin first={!hasPin} onDone={() => setTick((t) => t + 1)} />
+      </main>
+    )
   }
   return <>{children}</>
 }
@@ -54,7 +63,11 @@ export default function App() {
   if (!session) return <SignIn />
 
   return (
-    <ProfileGate userId={session.user.id} email={session.user.email ?? ''}>
+    <ProfileGate
+      userId={session.user.id}
+      hasPin={session.user.app_metadata?.has_pin === true}
+      mustChangePin={session.user.app_metadata?.must_change_pin === true}
+    >
     <VisitsProvider userId={session.user.id}>
       <Routes>
         <Route element={<Shell />}>

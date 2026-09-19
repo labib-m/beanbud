@@ -4,6 +4,7 @@ import { Avatar } from '../components/Avatar'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { fetchLiteVisits, fetchProfiles, updateProfile, type ProfileEdit } from '../data/social'
 import { useLoad } from '../data/useLoad'
+import { SetPin } from './SetPin'
 import { displayName, emptyProfile, handleText, statsFor } from '../lib/people'
 
 export function You() {
@@ -15,15 +16,17 @@ export function You() {
     return { profile: profiles.find((p) => p.id === me) ?? emptyProfile(me), stats: statsFor(visits.filter((v) => v.user_id === me)) }
   }, [me, tick])
   const [editing, setEditing] = useState(false)
+  const [changingPin, setChangingPin] = useState(false)
 
   return (
     <main className="screen">
       <h1 className="title">You<span className="dot">.</span></h1>
-      <p className="muted spaced">{session?.user.email}</p>
       {loading && <p className="muted">Loading…</p>}
       {error && <p className="error" role="alert">{error}</p>}
 
-      {data && !editing && (
+      {data && changingPin && <SetPin first={false} onDone={() => setChangingPin(false)} onCancel={() => setChangingPin(false)} />}
+
+      {data && !editing && !changingPin && (
         <>
           <div className="you-card">
             <Avatar id={me} profile={data.profile} size={64} />
@@ -44,6 +47,7 @@ export function You() {
           <p className="muted spaced">Other people see your name, username and these details. Your notes stay private.</p>
           <div className="row-btns">
             <button className="btn ghost" onClick={() => setEditing(true)}>Edit profile</button>
+            <button className="btn ghost" onClick={() => setChangingPin(true)}>Change PIN</button>
             <button className="btn ghost" onClick={signOut}>Sign out</button>
           </div>
         </>

@@ -1,76 +1,88 @@
 import { useState, type FormEvent } from 'react'
-import { supabase } from '../lib/supabase'
+import { PinInput } from '../components/PinInput'
+import { PIN_LENGTH, signInWithPin, signUp } from '../data/auth'
 
-type Status =
-  | { kind: 'idle' }
-  | { kind: 'sending' }
-  | { kind: 'sent'; via: 'email'; email: string }
-  | { kind: 'sent'; via: 'username'; handle: string }
-  | { kind: 'error'; message: string }
-
-// Supabase only accepts return addresses that match an entry like
-// https://your-app.vercel.app/** , which needs the trailing slash.
-const RETURN_TO = window.location.origin + '/'
+type Mode = 'signin' | 'create'
+const USERNAME_RULE = /^[A-Za-z0-9_.-]{2,24}$/
 
 export function SignIn() {
-  const [value, setValue] = useState('')
-  const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [mode, setMode] = useState<Mode>('signin')
+  const [username, setUsername] = useState('')
+  const [pin, setPin] = useState('')
+  const [again, setAgain] = useState('')
+  const [invite, setInvite] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [forgot, setForgot] = useState(false)
+
+  function go(next: Mode) {
+    setMode(next); setError(''); setPin(''); setAgain(''); setForgot(false)
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    const clean = value.trim()
-    if (!clean) return
-    setStatus({ kind: 'sending' })
+    setError('')
+    const name = username.trim().replace(/^@/, '')
+    if (!name) return setError('Enter your username.')
+    if (pin.length !== PIN_LENGTH) return setError(`Your PIN is ${PIN_LENGTH} digits.`)
 
-    if (clean.includes('@') && !clean.startsWith('@')) {
-      const { error } = await supabase.auth.signInWithOtp({ email: clean, options: { emailRedirectTo: RETURN_TO } })
-      setStatus(error ? { kind: 'error', message: error.message } : { kind: 'sent', via: 'email', email: clean })
-      return
+    if (mode === 'create') {
+      if (!USERNAME_RULE.test(name)) return setError('Usernames are 2 to 24 characters: letters, numbers, dot, dash or underscore.')
+      if (pin !== again) return setError("The two PINs don't match.")
+      if (!invite.trim()) return setError('Enter the invite code you were given.')
     }
 
-    // A username: a server function finds the account and emails its owner.
-    const handle = clean.replace(/^@/, '')
-    const { error } = await supabase.functions.invoke('sign-in-with-username', {
-      body: { username: handle, redirectTo: RETURN_TO },
-    })
-    setStatus(
-      error
-        ? { kind: 'error', message: "Signing in with a username isn't available right now. Use your email instead." }
-        : { kind: 'sent', via: 'username', handle },
-    )
+    setBusy(true)
+    const r = mode === 'create' ? await signUp(name, pin, invite.trim()) : await signInWithPin(name, pin)
+    if (!r.ok) { setError(r.message); setPin(''); setAgain(''); setBusy(false) }
+    // on success the app switches screens by itself
   }
 
-  if (status.kind === 'sent') {
-    return (
-      <main className="screen center">
-        <h1 className="title">Check your email<span className="dot">.</span></h1>
-        <p className="muted">
-          {status.via === 'email'
-            ? <>We sent a sign-in link to <strong>{status.email}</strong>. Open it on this device and you're in.</>
-            : <>If <strong>@{status.handle}</strong> exists, we've sent a sign-in link to the email address on that account. Open it on this device and you're in.</>}
-        </p>
-        <button className="btn ghost" onClick={() => setStatus({ kind: 'idle' })}>Back</button>
-      </main>
-    )
-  }
-
+  const creating = mode === 'create'
   return (
     <main className="screen center">
-      <h1 className="app-title">Bean Bud</h1>
-      <p className="muted">Your cafe notebook. Sign in with a link, no password.</p>
+      {creating
+        ? <h1 className="title">Create account<span className="dot">.</span></h1>
+        : <h1 className="app-title">Bean Bud</h1>}
+      <p className="muted">
+        {creating
+          ? `Pick a username and a ${PIN_LENGTH}-digit PIN. You'll use them to sign in. There's no email and no password to reset, so remember your PIN.`
+          : 'Your cafe notebook.'}
+      </p>
+
       <form className="stack" onSubmit={submit}>
-        <label className="field-label" htmlFor="who">Email or username</label>
-        <input
-          id="who" className="input" type="text" autoComplete="username" autoCapitalize="none" autoCorrect="off"
-          spellCheck={false} placeholder="you@example.com or @username" value={value}
-          onChange={(e) => setValue(e.target.value)} required
-        />
-        <button className="btn primary" type="submit" disabled={status.kind === 'sending'}>
-          {status.kind === 'sending' ? 'Sending…' : 'Email me a link'}
+        <label className="field-label" htmlFor="username">Username</label>
+        <input id="username" className="input" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+          placeholder="@username" value={username} onChange={(e) => setUsername(e.target.value)} />
+        <PinInput id="pin" label="PIN" value={pin} onChange={setPin} autoComplete={creating ? 'off' : 'current-password'} />
+        {creating && (
+          <>
+            <PinInput id="pin2" label="Repeat PIN" value={again} onChange={setAgain} />
+            <label className="field-label" htmlFor="invite">Invite code</label>
+            <input id="invite" className="input" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+              placeholder="From the person who invited you" value={invite} onChange={(e) => setInvite(e.target.value)} />
+          </>
+        )}
+        {error && <p className="error" role="alert">{error}</p>}
+        <button className="btn primary" type="submit" disabled={busy}>
+          {busy ? (creating ? 'Creating…' : 'Signing in…') : (creating ? 'Create account' : 'Sign in')}
         </button>
-        {status.kind === 'error' && <p className="error" role="alert">{status.message}</p>}
-        <p className="muted small">New here? Enter your email and we'll set you up.</p>
       </form>
+
+      <div className="row-links">
+        {creating
+          ? <button className="link mut" onClick={() => go('signin')}>Already have an account? Sign in</button>
+          : <>
+              <button className="link mut" onClick={() => go('create')}>New here? Create an account</button>
+              <button className="link mut" onClick={() => setForgot((f) => !f)} aria-expanded={forgot}>Forgot your PIN?</button>
+            </>}
+      </div>
+      {forgot && !creating && (
+        <p className="muted note-box">
+          There's no email reset. Contact the person who runs Bean Bud and ask them to reset your PIN. They'll give you a
+          temporary one, and you'll choose your own the next time you sign in.
+        </p>
+      )}
     </main>
   )
 }
