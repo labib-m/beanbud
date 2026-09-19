@@ -55,6 +55,7 @@ const pin = givenPin ?? String(randomInt(0, 10 ** PIN_LENGTH)).padStart(PIN_LENG
 if (!new RegExp('^\\d{' + PIN_LENGTH + '}$').test(pin)) fail('The PIN must be exactly ' + PIN_LENGTH + ' digits.')
 
 // --- the admin key: from the environment, or asked for with typing hidden
+const ESC = String.fromCharCode(27)
 function askHidden(prompt) {
   if (!process.stdin.isTTY) return Promise.resolve('')
   return new Promise((resolve) => {
@@ -68,10 +69,14 @@ function askHidden(prompt) {
       process.stdin.removeListener('data', onData)
       process.stdin.setRawMode(false)
       process.stdin.pause()
-      process.stdout.write('\n')
+      // Show only how many characters were read (never the key itself). A generated key is 64.
+      process.stdout.write('\n  read ' + value.length + ' characters\n')
       resolve(value)
     }
     function onData(chunk) {
+      // Some terminals wrap pasted text in "bracketed paste" markers (ESC[200~ ... ESC[201~).
+      // Drop them so they never end up inside the key.
+      chunk = chunk.split(ESC + '[200~').join('').split(ESC + '[201~').join('')
       // a paste arrives as one chunk, so walk it character by character
       for (const ch of chunk) {
         const code = ch.charCodeAt(0)
@@ -86,6 +91,10 @@ function askHidden(prompt) {
 }
 const adminKey = env.ADMIN_KEY || (await askHidden('Admin key (hidden): '))
 if (!adminKey) fail('No admin key. Set ADMIN_KEY in the environment, or run this in a terminal to be prompted.')
+// Wrong guesses count toward a lock-out, so don't send something that is clearly not a generated key (64 characters).
+if (!env.ADMIN_KEY && adminKey.length !== 64) {
+  fail('Read ' + adminKey.length + ' characters, but a generated admin key has 64. Nothing was sent, so no attempt was used. Paste the key again.')
+}
 
 // --- do it
 const target = who.includes('@') && !who.startsWith('@') ? { email: who } : { username: who.replace(/^@/, '') }

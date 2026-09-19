@@ -3,7 +3,7 @@ import { PinInput } from '../components/PinInput'
 import { PIN_LENGTH, savePin } from '../data/auth'
 
 /** Choose or change a PIN. `first` = the person has never had one. */
-export function SetPin({ first, onDone, onCancel }: { first: boolean; onDone: () => void; onCancel?: () => void }) {
+export function SetPin({ first, onDone, onCancel, onSignOut }: { first: boolean; onDone: () => void; onCancel?: () => void; onSignOut?: () => void }) {
   const [pin, setPin] = useState('')
   const [again, setAgain] = useState('')
   const [error, setError] = useState('')
@@ -34,6 +34,7 @@ export function SetPin({ first, onDone, onCancel }: { first: boolean; onDone: ()
       <PinInput id="pin2" label="Repeat PIN" value={again} onChange={setAgain} />
       <button className="btn primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save PIN'}</button>
       {onCancel && <button className="btn ghost" type="button" onClick={onCancel}>Cancel</button>}
+      {onSignOut && <button className="btn ghost" type="button" onClick={onSignOut}>Back to sign in</button>}
     </form>
   )
 }

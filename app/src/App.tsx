@@ -20,6 +20,7 @@ import { You } from './screens/You'
 /** Holds the app back until the person has chosen a username and display name. */
 function ProfileGate({ userId, hasPin, mustChangePin, children }: { userId: string; hasPin: boolean; mustChangePin: boolean; children: ReactNode }) {
   const [tick, setTick] = useState(0)
+  const { signOut } = useAuth()
   const { data: profile, error, loading } = useLoad(() => fetchMyProfile(userId), [userId, tick])
 
   if (error) {
@@ -27,6 +28,7 @@ function ProfileGate({ userId, hasPin, mustChangePin, children }: { userId: stri
       <main className="screen center">
         <p className="error" role="alert">{error}</p>
         <button className="btn ghost" onClick={() => setTick((t) => t + 1)}>Try again</button>
+        <button className="btn ghost" onClick={signOut}>Back to sign in</button>
       </main>
     )
   }
@@ -34,13 +36,13 @@ function ProfileGate({ userId, hasPin, mustChangePin, children }: { userId: stri
 
   const p = profile ?? emptyProfile(userId)
   if (!p.handle || !p.display_name) {
-    return <Onboarding profile={p} onDone={() => setTick((t) => t + 1)} />
+    return <Onboarding profile={p} onDone={() => setTick((t) => t + 1)} onSignOut={signOut} />
   }
   // No PIN yet (an older account), or the developer just gave them a temporary one.
   if (!hasPin || mustChangePin) {
     return (
       <main className="screen center">
-        <SetPin first={!hasPin} onDone={() => setTick((t) => t + 1)} />
+        <SetPin first={!hasPin} onDone={() => setTick((t) => t + 1)} onSignOut={signOut} />
       </main>
     )
   }

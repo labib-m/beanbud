@@ -84,3 +84,15 @@ test('limiter keys used by sign-up and admin can never be a real username', () =
   assert.equal(m.normaliseHandle('~signup'), null)
   assert.equal(m.normaliseHandle('~admin'), null)
 })
+
+test('sameSecret ignores stray whitespace and a trailing newline on either side, but nothing else', async () => {
+  const key = 'a'.repeat(64)
+  assert.equal(await m.sameSecret(key, key), true)
+  assert.equal(await m.sameSecret(key, key + '\n'), true)      // stored with the newline from `| pbcopy`
+  assert.equal(await m.sameSecret(key + '\n', key), true)
+  assert.equal(await m.sameSecret('  ' + key + ' \r\n', key), true)
+  assert.equal(await m.sameSecret(key, 'b' + key.slice(1)), false)
+  assert.equal(await m.sameSecret(key, key.slice(0, -1)), false)
+  assert.equal(await m.sameSecret('ab cd', 'abcd'), false)     // inner spaces still matter
+  assert.equal(await m.sameSecret('', ''), true)
+})

@@ -43,7 +43,9 @@ Run these in the Supabase SQL editor, in order, pasting each whole file:
 
 People create an account with a **username, a 4-digit PIN and an invite code**, and sign in with the username and PIN. It happens inside the app, so it works from an iPhone home-screen icon. There is no email, no SMTP and no reset link. (Supabase needs every account to have an email, so accounts get a made-up address like `u-…@users.beanbud.invalid` that can never receive mail. Nobody sees it.)
 
-**1. Edge Function.** Create a function named exactly `pin-auth` and paste in `supabase/functions/pin-auth/index.ts`. Leave JWT verification on. Redeploy it whenever that file changes.
+**1. Edge Function.** Create a function named exactly `pin-auth` and paste in `supabase/functions/pin-auth/index.ts`. Redeploy it whenever that file changes.
+
+**Turn OFF "Verify JWT"** for this function (its settings, "Enforce JWT Verification"). Newer Supabase projects sign signed-in users' tokens with asymmetric keys (ES256), and the built-in gate only understands the older kind. It rejects them with `UNAUTHORIZED_ASYMMETRIC_JWT` before the function runs, so a signed-in person could never save a PIN. This is safe: the function does its own checks. Sign-in and sign-up are meant to be public, `set-pin` validates the caller's token with Supabase Auth, and `admin-reset-pin` needs the admin key.
 
 **2. Secrets** (Edge Functions → Secrets). Three, all yours to keep safe:
 

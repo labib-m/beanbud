@@ -54,7 +54,14 @@ export async function signUp(username: string, pin: string, invite: string): Pro
 /** Save (or change) the PIN for the signed-in person. */
 export async function savePin(pin: string): Promise<Result> {
   const { data, error } = await supabase.functions.invoke('pin-auth', { body: { action: 'set-pin', pin } })
-  if (error || !data?.ok) return { ok: false, message: "Couldn't save your PIN. Try again in a moment." }
+  if (error) {
+    const status = error instanceof FunctionsHttpError ? error.context.status : null
+    if (status === 401) {
+      return { ok: false, message: "We couldn't verify your session. Go back to sign in, sign in again, and retry." }
+    }
+    return { ok: false, message: "Couldn't save your PIN" + (status ? ` (error ${status})` : '') + '. Try again in a moment, or go back to sign in.' }
+  }
+  if (!data?.ok) return { ok: false, message: "Couldn't save your PIN. Try again in a moment, or go back to sign in." }
   await supabase.auth.refreshSession() // pulls in the updated "has a PIN" markers
   return { ok: true }
 }

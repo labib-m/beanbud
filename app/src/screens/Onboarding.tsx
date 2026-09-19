@@ -6,7 +6,7 @@ import type { Profile } from '../lib/types'
 
 type Check = 'idle' | 'checking' | 'free' | 'taken' | 'invalid'
 
-export function Onboarding({ profile, onDone }: { profile: Profile; onDone: () => void }) {
+export function Onboarding({ profile, onDone, onSignOut }: { profile: Profile; onDone: () => void; onSignOut?: () => void }) {
   const [displayName, setDisplayName] = useState(profile.display_name ?? '')
   const [handle, setHandle] = useState(profile.handle ?? '')
   const [avatar, setAvatar] = useState<string | null>(profile.avatar ?? 'bean')
@@ -96,6 +96,7 @@ export function Onboarding({ profile, onDone }: { profile: Profile; onDone: () =
         <button className="btn primary" type="submit" disabled={saving || check === 'taken' || check === 'checking'}>
           {saving ? 'Saving…' : 'Continue'}
         </button>
+        {onSignOut && <button className="btn ghost" type="button" onClick={onSignOut}>Back to sign in</button>}
       </form>
     </main>
   )

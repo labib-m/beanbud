@@ -19,6 +19,12 @@
 //    cannot get past the lockout.
 //  * Wrong username and wrong PIN give the same answer.
 //
+// Deploy with "Verify JWT" switched OFF. This project signs users' tokens with
+// asymmetric keys (ES256), which the built-in gate rejects (UNAUTHORIZED_ASYMMETRIC_JWT)
+// before this code runs. That is safe here because each action does its own check:
+// sign-in / sign-up are public by design, set-pin validates the caller's token with
+// Supabase Auth, and admin-reset-pin needs ADMIN_KEY.
+//
 // Secrets you set (SUPABASE_URL / ANON_KEY / SERVICE_ROLE_KEY are automatic):
 //   PIN_PEPPER   long random string. If lost, every PIN stops working.
 //   INVITE_CODE  the phrase new people must type to create an account.
@@ -84,6 +90,14 @@ export async function safeEqual(a: string, b: string): Promise<boolean> {
   for (let i = 0; i < p.length; i++) diff |= p[i] ^ q[i]
   return diff === 0
 }
+
+/**
+ * Compares a typed secret with a stored one, ignoring stray spaces or a trailing
+ * newline on either side (a key copied from a terminal or pasted into a web form
+ * often carries one). Used for the invite code and the admin key. Deliberately NOT
+ * used for PIN_PEPPER: changing how the pepper is read would change every PIN.
+ */
+export const sameSecret = (typed: string, stored: string) => safeEqual(typed.trim(), stored.trim())
 
 /** A throwaway strong password, used only for the instant between creating an account and setting the real one. */
 export function randomPassword(): string {
@@ -174,7 +188,7 @@ async function signUp(body: Record<string, unknown>): Promise<Response> {
   const { admin, anon } = clients()
   const limited = await throttle(admin, SIGNUP_KEY, SIGNUP_MAX_FAILURES)   // guessing the invite code is throttled
   if (limited) return limited
-  if (!(await safeEqual(String(body.invite ?? '').trim(), invite.trim()))) return json({ ok: false, reason: 'invite' }, 403)
+  if (!(await sameSecret(String(body.invite ?? ''), invite))) return json({ ok: false, reason: 'invite' }, 403)
 
   if (await findUserIdByHandle(admin, handle)) return json({ ok: false, reason: 'taken' }, 409)
 
@@ -244,7 +258,7 @@ async function adminResetPin(body: Record<string, unknown>): Promise<Response> {
   const { admin } = clients()
   const limited = await throttle(admin, ADMIN_KEY_NAME, ADMIN_MAX_FAILURES)
   if (limited) return limited
-  if (!(await safeEqual(String(body.admin_key ?? ''), adminKey))) return json({ ok: false }, 403)
+  if (!(await sameSecret(String(body.admin_key ?? ''), adminKey))) return json({ ok: false }, 403)
   if (!pinIsValid(body.pin)) return json({ ok: false, reason: 'pin' }, 400)
 
   // Find the person, by username or (for older accounts) by email.
