@@ -268,3 +268,8 @@ textarea.input.area.short { min-height: 70px; }
 .change { background: var(--surf); border-radius: 18px; padding: 10px 14px; display: flex; flex-direction: column; gap: 3px; overflow-wrap: anywhere; font-size: 13px; }
 .change .was { color: var(--mut); text-decoration: line-through; }
 .change .now { font-weight: 600; }
+
+/* ---- overall rating beside a cafe's name ---- */
+.rating-badge { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3px; background: var(--surf2); border-radius: 20px; padding: 9px 12px; min-width: 84px; }
+.rating-badge.none { min-width: 0; padding: 8px 12px; }
+.rating-num { font: 400 26px/1 var(--display); color: var(--acc); }

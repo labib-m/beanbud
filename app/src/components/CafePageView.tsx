@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { CafeRecord } from '../data/cafes'
-import { drinkReviews, publicNotes, recentLogs, visitorCount, type CafeVisit } from '../lib/cafeInfo'
+import { drinkReviews, publicNotes, recentLogs, visitorCount, type CafeRating, type CafeVisit } from '../lib/cafeInfo'
 import { describeRevision, type Revision } from '../lib/history'
 import { displayName, handleText } from '../lib/people'
 import { fmtDate } from '../lib/stats'
@@ -11,6 +11,7 @@ type Props = {
   cafe: CafeRecord
   visits: CafeVisit[]
   revisions: Revision[]
+  rating: CafeRating        // the overall average across every rated visit by everyone
   myVisitCount: number      // how many visits YOU have logged here
   onEdit: () => void
 }
@@ -22,8 +23,20 @@ const Who = ({ id, p }: { id: string; p: CafeVisit['profiles'] }) => (
   <span className="who-line"><Avatar id={id} profile={p} size={24} /><b>{displayName(p)}</b> <span className="muted small">{handleText(p)}</span></span>
 )
 
+/** The cafe's overall star rating, shown beside its name. */
+function RatingBadge({ rating }: { rating: CafeRating }) {
+  if (rating.count === 0) return <div className="rating-badge none"><span className="muted small">No ratings yet</span></div>
+  return (
+    <div className="rating-badge" role="img" aria-label={`Overall rating ${rating.average.toFixed(1)} out of 5, from ${rating.count} ${rating.count === 1 ? 'rating' : 'ratings'}`}>
+      <b className="rating-num">{rating.average.toFixed(1)}</b>
+      <Stars value={rating.average} size={14} />
+      <span className="muted small">{rating.count} {rating.count === 1 ? 'rating' : 'ratings'}</span>
+    </div>
+  )
+}
+
 /** The public page of one cafe. Display only; the screen around it loads the data. */
-export function CafePageView({ cafe, visits, revisions, myVisitCount, onEdit }: Props) {
+export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, onEdit }: Props) {
   const logs = recentLogs(visits)
   const reviews = drinkReviews(visits)
   const notes = publicNotes(visits)
@@ -33,13 +46,16 @@ export function CafePageView({ cafe, visits, revisions, myVisitCount, onEdit }: 
     <main className="screen detail">
       <header className="detail-head">
         <Link className="back" to="/feed?tab=directory">← Directory</Link>
-        <div>
+        <div className="card-top">
+         <div>
           <h1 className="detail-name">{cafe.name}</h1>
           <p className="muted">{[cafe.area, cafe.city].filter(Boolean).join(', ')}</p>
           <p className="code">{cafe.code}</p>
           <p className="muted small">
             {visits.length} {visits.length === 1 ? 'visit' : 'visits'}{visits.length > 0 && <> by {people} {people === 1 ? 'person' : 'people'}</>}
           </p>
+         </div>
+         <RatingBadge rating={rating} />
         </div>
 
         <div className="facts">
@@ -75,8 +91,8 @@ export function CafePageView({ cafe, visits, revisions, myVisitCount, onEdit }: 
       </section>
 
       <section className="section">
-        <h3>Recent drink reviews</h3>
-        {reviews.length === 0 ? <p className="muted">No rated drinks yet.</p> : (
+        <h3>Recent ratings</h3>
+        {reviews.length === 0 ? <p className="muted">No ratings yet.</p> : (
           <ul className="plain">
             {reviews.map((d, i) => (
               <li className="recent-row" key={i + d.drink + d.visitedOn}>

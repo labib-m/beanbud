@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { CafeVisit } from '../lib/cafeInfo'
+import { cafeRating, type CafeRating, type CafeVisit } from '../lib/cafeInfo'
 import type { DirectoryCafe } from '../lib/directory'
 import type { Revision } from '../lib/history'
 
@@ -13,7 +13,7 @@ export type CafeRecord = {
   code: string
 }
 
-export type CafePage = { cafe: CafeRecord; visits: CafeVisit[]; revisions: Revision[] }
+export type CafePage = { cafe: CafeRecord; visits: CafeVisit[]; revisions: Revision[]; rating: CafeRating }
 
 /** Every cafe in the shared directory. */
 export async function fetchDirectory(): Promise<DirectoryCafe[]> {
@@ -28,7 +28,7 @@ export async function fetchDirectory(): Promise<DirectoryCafe[]> {
 
 /** Everything a cafe's public page shows. Null if there is no such cafe. */
 export async function fetchCafePage(cafeId: string): Promise<CafePage | null> {
-  const [cafe, visits, revisions] = await Promise.all([
+  const [cafe, visits, revisions, overalls] = await Promise.all([
     supabase.from('cafes').select('id, name, city, area, address, map_url, code').eq('id', cafeId).maybeSingle(),
     supabase
       .from('visits')
@@ -42,15 +42,19 @@ export async function fetchCafePage(cafeId: string): Promise<CafePage | null> {
       .select('id, kind, address, map_url, prev_address, prev_map_url, changed_at, changed_by, profiles(display_name, handle)')
       .eq('cafe_id', cafeId)
       .order('changed_at', { ascending: false }),
+    // Every rated visit's overall score, from everyone (not just the recent ones listed on the page).
+    supabase.from('visits').select('overall').eq('cafe_id', cafeId).not('overall', 'is', null).limit(5000),
   ])
   if (cafe.error) throw new Error(cafe.error.message)
   if (visits.error) throw new Error(visits.error.message)
   if (revisions.error) throw new Error(revisions.error.message)
+  if (overalls.error) throw new Error(overalls.error.message)
   if (!cafe.data) return null
   return {
     cafe: cafe.data as CafeRecord,
     visits: visits.data as unknown as CafeVisit[],
     revisions: revisions.data as unknown as Revision[],
+    rating: cafeRating((overalls.data as { overall: number | string | null }[]).map((v) => v.overall)),
   }
 }
 

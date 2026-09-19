@@ -53,3 +53,16 @@ export function publicNotes(visits: CafeVisit[], n = 5): PublicNote[] {
 }
 
 export const visitorCount = (visits: CafeVisit[]) => new Set(visits.map((v) => v.user_id)).size
+
+export type CafeRating = { average: number; count: number }
+
+/**
+ * A cafe's overall rating: the average of every rated visit's overall score, from every person.
+ * (A visit's own overall is the average of the criteria its author rated.) Visits nobody rated
+ * are left out, so they neither help nor hurt. Returns average 0 and count 0 when nothing is rated.
+ */
+export function cafeRating(overalls: (number | string | null | undefined)[]): CafeRating {
+  const rated = overalls.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+  if (!rated.length) return { average: 0, count: 0 }
+  return { average: rated.reduce((a, b) => a + b, 0) / rated.length, count: rated.length }
+}

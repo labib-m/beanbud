@@ -52,6 +52,7 @@ Then run the checks in `supabase/tests/`. Each ends with `ALL CHECKS PASSED`. Th
 - **Every edit is recorded** in the cafe's page history: who, when, old and new value. A database trigger writes it, so no code path can skip it. Clients cannot write, change or delete history.
 - **Past entries never change.** Each visit remembers which version of the cafe's details it was logged under; new visits use the newest.
 - **Cafes are never deleted** when their visits are, so the directory grows from what people log.
+- **Every cafe has an overall star rating**, shown beside its name on its page: the average of every rated visit's overall score, from every person (a visit's own overall is the average of the criteria its author rated). Visits nobody rated are left out. The page also lists the latest **ratings** (rated drinks) and the latest logs.
 - **Public notes** are an optional field on a visit, separate from the private note, and appear on the cafe's page.
 - When you type a new cafe, the form suggests existing cafes with the same map link or a very similar name in the same city ("Is it one of these?"). It only suggests.
 

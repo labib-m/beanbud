@@ -1,7 +1,7 @@
 // Tests what a cafe page shows.  Run: node --test supabase/tests/cafe_info.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { recentLogs, drinkReviews, publicNotes, visitorCount } from '../../app/src/lib/cafeInfo.ts'
+import { recentLogs, drinkReviews, publicNotes, visitorCount, cafeRating } from '../../app/src/lib/cafeInfo.ts'
 
 let n = 0
 const v = (user, date, o = {}) => ({
@@ -50,4 +50,35 @@ test('visitor count is distinct people, and inputs are never reordered', () => {
   const before = vs.map((x) => x.id)
   recentLogs(vs); drinkReviews(vs); publicNotes(vs)
   assert.deepEqual(vs.map((x) => x.id), before)
+})
+
+test('cafe rating: the average of every rated visit, from everyone', () => {
+  const r = cafeRating([5, 4, 3])
+  assert.equal(r.count, 3)
+  assert.equal(r.average, 4)
+  assert.equal(cafeRating([4.5, 3.5]).average, 4)
+  assert.equal(cafeRating([5]).average, 5)
+})
+
+test('cafe rating: visits nobody rated are left out, not counted as zero', () => {
+  const r = cafeRating([5, null, undefined, 0, 3])
+  assert.equal(r.count, 2)
+  assert.equal(r.average, 4)
+})
+
+test('cafe rating: numbers arriving as text (the database sends numeric values that way) still work', () => {
+  const r = cafeRating(['4.5', '3.5', '5.00'])
+  assert.equal(r.count, 3)
+  assert.ok(Math.abs(r.average - (4.5 + 3.5 + 5) / 3) < 1e-9)
+})
+
+test('cafe rating: nothing rated gives 0 and 0, never NaN', () => {
+  assert.deepEqual(cafeRating([]), { average: 0, count: 0 })
+  assert.deepEqual(cafeRating([null, undefined, 0, 'abc']), { average: 0, count: 0 })
+})
+
+test('cafe rating: keeps fractions so the star fill is exact, and rounds only when shown', () => {
+  const r = cafeRating([4, 4, 5])
+  assert.ok(Math.abs(r.average - 13 / 3) < 1e-9)
+  assert.equal(r.average.toFixed(1), '4.3')
 })
