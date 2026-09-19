@@ -10,7 +10,7 @@ Vite + React + TypeScript on the front end, Supabase (Postgres, Auth, one Edge F
 | --- | --- |
 | `app/` | The web app (this is the folder Vercel builds) |
 | `supabase/migrations/` | Database schema, security policies and functions, in order |
-| `supabase/tests/` | SQL scripts that check the security policies, `save_visit()` and the PIN limiter, plus a Node test for the function's logic |
+| `supabase/tests/` | SQL scripts that check the security rules, `save_visit()`, the PIN limiter and the cafe directory; Node tests for the app's and function's logic |
 | `supabase/functions/` | Edge Function `pin-auth`: create account, sign in, change PIN, developer reset |
 | `tools/` | `reset-pin.mjs`: give someone a temporary PIN |
 | `design/` | Visual spec and screens |
@@ -32,12 +32,26 @@ Open http://localhost:5173. Use the **anon** (public) key only. Never put the `s
 Run these in the Supabase SQL editor, in order, pasting each whole file:
 
 1. `supabase/migrations/20260919000000_initial_schema.sql`
-2. `supabase/tests/rls_check.sql` (should end with `ALL CHECKS PASSED`)
-3. `supabase/migrations/20260919000100_save_visit.sql`
-4. `supabase/tests/save_visit_check.sql` (should end with `ALL CHECKS PASSED`)
-5. `supabase/migrations/20260919000200_profile_avatar.sql`
-6. `supabase/migrations/20260919000300_pin_attempts.sql`
-7. `supabase/tests/pin_attempts_check.sql` (should end with `ALL CHECKS PASSED`)
+2. `supabase/migrations/20260919000100_save_visit.sql`
+3. `supabase/migrations/20260919000200_profile_avatar.sql`
+4. `supabase/migrations/20260919000300_pin_attempts.sql`
+5. `supabase/migrations/20260920000100_cafe_cleanup.sql`
+6. `supabase/migrations/20260920000200_save_visit_cafe_edit.sql`
+7. `supabase/migrations/20260920000300_cafe_directory.sql` (undoes 5 and 6, which were a stop-gap)
+
+Then run the checks in `supabase/tests/`. Each ends with `ALL CHECKS PASSED`. They test the **latest** rules, so run them after all the migrations: `rls_check.sql`, `save_visit_check.sql`, `pin_attempts_check.sql`, `cafe_directory_check.sql`.
+
+## Cafes, the directory and page history
+
+- **Every cafe is in the shared directory** and has its own page (`/cafes/<id>`), listed A to Z under Feed → Directory.
+- **A new cafe needs an address and a map link** before the first visit there can be saved. Picking an existing cafe from the dropdown fills everything in, so later visits are quick.
+- **Each cafe has a permanent readable code** such as `DOSE_DHA_BAN` (name, city, neighbourhood; a clash gets a number, e.g. `DOSE2_DHA_BAN`).
+- **Anyone signed in can use "Edit cafe"** to change a cafe's address and map link (both must stay filled in). Name, city and neighbourhood identify the cafe and are fixed.
+- **Every edit is recorded** in the cafe's page history: who, when, old and new value. A database trigger writes it, so no code path can skip it. Clients cannot write, change or delete history.
+- **Past entries never change.** Each visit remembers which version of the cafe's details it was logged under; new visits use the newest.
+- **Cafes are never deleted** when their visits are, so the directory grows from what people log.
+- **Public notes** are an optional field on a visit, separate from the private note, and appear on the cafe's page.
+- When you type a new cafe, the form suggests existing cafes with the same map link or a very similar name in the same city ("Is it one of these?"). It only suggests.
 
 ## Sign-in setup
 

@@ -20,10 +20,13 @@ function Sparkline({ points }: { points: number[] }) {
   )
 }
 
-function VisitRow({ v, open, onToggle, onEdit }: { v: FullVisit; open: boolean; onToggle: () => void; onEdit: () => void }) {
+function VisitRow({ v, open, onToggle, onEdit, currentAddress }: { v: FullVisit; open: boolean; onToggle: () => void; onEdit: () => void; currentAddress: string | null }) {
   const note = noteOf(v)
   const verdict = VERDICTS.find((x) => x.value === v.verdict)?.label
   const sym = v.currency ? currencySymbol(v.currency).trim() : ''
+  // The address this visit was logged under, shown only if the cafe's page has been edited since.
+  const thenAddress = v.cafe_revisions?.address ?? null
+  const addressChanged = !!thenAddress && thenAddress !== (currentAddress ?? '')
   return (
     <li className="visit-row">
       <button className="visit-head" aria-expanded={open} onClick={onToggle}>
@@ -45,6 +48,12 @@ function VisitRow({ v, open, onToggle, onEdit }: { v: FullVisit; open: boolean; 
               </div>
             )
           })}
+          {addressChanged && (
+            <div className="block">
+              <h4>Address when you visited</h4>
+              <p className="note">{thenAddress}</p>
+            </div>
+          )}
           {v.visit_drinks.length > 0 && (
             <div className="block">
               <h4>Coffee</h4>
@@ -108,6 +117,7 @@ export function CafeDetail() {
     <main className="screen detail">
       <header className="detail-head">
         <Link className="back" to="/">← Notebook</Link>
+        <Link className="back" to={`/cafes/${cafe.id}`}>View the shared cafe page →</Link>
         <div className="card-top">
           <div>
             <h1 className="detail-name">{cafe.name}</h1>
@@ -164,7 +174,7 @@ export function CafeDetail() {
           {[...group.visits].reverse().map((v) => (
             <VisitRow key={v.id} v={v} open={openVisit === v.id}
               onToggle={() => setOpenVisit(openVisit === v.id ? null : v.id)}
-              onEdit={() => openEdit(v)} />
+              onEdit={() => openEdit(v)} currentAddress={cafe.address} />
           ))}
         </ul>
       </section>

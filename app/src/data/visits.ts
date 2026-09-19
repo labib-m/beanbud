@@ -27,7 +27,7 @@ function friendlyError(e: { code?: string; message: string }): string {
 export async function listCafes(): Promise<Cafe[]> {
   const { data, error } = await supabase
     .from('cafes')
-    .select('id, name, city, area, address, map_url, created_by')
+    .select('id, name, city, area, address, map_url, code')
     .order('name')
     .limit(1000)
   if (error) throw new Error(error.message)
@@ -50,7 +50,7 @@ export async function myDrinkTypes(userId: string): Promise<string[]> {
 }
 
 const FULL_SELECT =
-  '*, cafes(id, name, city, area, address, map_url), visit_drinks(id, drink_type, price, score, sort_order), visit_notes(notes)'
+  '*, cafes(id, name, city, area, address, map_url, code), cafe_revisions(address, map_url), visit_drinks(id, drink_type, price, score, sort_order), visit_notes(notes)'
 
 /** All of this user's visits with cafe, drinks and their own private note. */
 export async function myVisits(userId: string): Promise<FullVisit[]> {

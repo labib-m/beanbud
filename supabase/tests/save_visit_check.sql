@@ -14,7 +14,7 @@ declare
   bob   uuid := '00000000-0000-0000-0000-0000000000b0';
   v1 uuid; v2 uuid; v3 uuid;
   n int;
-  cafe jsonb := '{"name":"Save Test Cafe","city":"Dhaka","area":"Banani"}';
+  cafe jsonb := '{"name":"Save Test Cafe","city":"Dhaka","area":"Banani","address":"1 Test Road","map_url":"https://maps.example/t"}';
 begin
   insert into auth.users (id, aud, role, email)
   values (alice, 'authenticated', 'authenticated', 'alice@test.invalid'),
@@ -81,7 +81,7 @@ begin
 
   ---------------- a bad save leaves nothing behind ----------------
   begin
-    v3 := public.save_visit('{"name":"Half Saved Cafe","city":"Dhaka"}',
+    v3 := public.save_visit('{"name":"Half Saved Cafe","city":"Dhaka","address":"2 Test Road","map_url":"https://maps.example/h"}',
                             '{"visited_on":"2026-09-13"}',
                             '[{"drink_type":"Mocha","score":9}]');   -- score 9 is invalid
     raise exception 'FAIL: invalid drink score was accepted';

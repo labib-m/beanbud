@@ -8,6 +8,7 @@ import { useLoad } from './data/useLoad'
 import { emptyProfile } from './lib/people'
 import { Onboarding } from './screens/Onboarding'
 import { CafeDetail } from './screens/CafeDetail'
+import { CafePublic } from './screens/CafePublic'
 import { Feed } from './screens/Feed'
 import { Notebook } from './screens/Notebook'
 import { People } from './screens/People'
@@ -75,6 +76,7 @@ export default function App() {
         <Route element={<Shell />}>
           <Route index element={<Notebook />} />
           <Route path="cafe/:cafeId" element={<CafeDetail />} />
+          <Route path="cafes/:cafeId" element={<CafePublic />} />
           <Route path="feed" element={<Feed />} />
           <Route path="people" element={<People />} />
           <Route path="people/:userId" element={<PersonProfile />} />

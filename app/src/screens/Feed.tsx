@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { Directory } from './Directory'
 import { Stars } from '../components/Stars'
 import { useVisits } from '../data/VisitsProvider'
 import { fetchFeed } from '../data/social'
@@ -10,7 +11,7 @@ import { displayName, handleText, relTime } from '../lib/people'
 import { groupByCafe, money } from '../lib/stats'
 import { currencySymbol } from '../lib/types'
 
-export function Feed() {
+function Activity() {
   const { session } = useAuth()
   const me = session!.user.id
   const { visits: mine } = useVisits()
@@ -20,8 +21,7 @@ export function Feed() {
   const myMeans = useMemo(() => new Map(groupByCafe(mine ?? []).map((g) => [g.cafeId, g.mean])), [mine])
 
   return (
-    <main className="screen">
-      <h1 className="title">Feed<span className="dot">.</span></h1>
+    <>
       <p className="muted spaced">{loading ? 'Loading…' : 'Newest first'}</p>
       {error && <p className="error" role="alert">{error}</p>}
       {data && data.length === 0 && <p className="muted">Nothing here yet. Log a visit to get it started.</p>}
@@ -42,7 +42,7 @@ export function Feed() {
                 </span>
                 {v.overall != null && <Stars value={Number(v.overall)} size={12.5} empty={own ? 'var(--line)' : 'var(--invLine)'} />}
               </div>
-              <Link className="post-cafe" to={own ? `/cafe/${v.cafe_id}` : `/people/${v.user_id}`}>{v.cafes.name}</Link>
+              <Link className="post-cafe" to={`/cafes/${v.cafe_id}`}>{v.cafes.name}</Link>
               <p className="post-sub">
                 {[v.cafes.area, v.cafes.city].filter(Boolean).join(', ')}
                 {drink && ` · ${drink.drink_type}${drink.price != null && drink.price > 0 ? ' ' + money(Number(drink.price), sym) : ''}`}
@@ -59,6 +59,23 @@ export function Feed() {
           )
         })}
       </ul>
+    </>
+  )
+}
+
+export function Feed() {
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('tab') === 'directory' ? 'directory' : 'activity'
+  const go = (t: 'activity' | 'directory') => setParams(t === 'directory' ? { tab: 'directory' } : {}, { replace: true })
+
+  return (
+    <main className="screen">
+      <h1 className="title">Feed<span className="dot">.</span></h1>
+      <div className="seg" role="tablist" aria-label="Feed view">
+        <button role="tab" aria-selected={tab === 'activity'} onClick={() => go('activity')}>Activity</button>
+        <button role="tab" aria-selected={tab === 'directory'} onClick={() => go('directory')}>Directory</button>
+      </div>
+      {tab === 'directory' ? <Directory /> : <Activity />}
     </main>
   )
 }

@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { StarInput } from '../components/StarInput'
-import { cafeFieldLocks } from '../lib/cafeRules'
+import { Link } from 'react-router-dom'
+import { newCafeProblem } from '../lib/cafeRules'
+import { similarCafes } from '../lib/similar'
 import { deleteVisit, listCafes, myDrinkTypes, saveVisit } from '../data/visits'
 import {
   AMENITIES, CURRENCIES, DEFAULT_DRINKS, GOOD_FOR, PARKING, PRICE_BANDS, SCORES, VERDICTS,
@@ -56,6 +58,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
   const [currency, setCurrency] = useState(editing?.currency || readCurrency())
   const [verdict, setVerdict] = useState<Verdict | ''>(editing?.verdict ?? '')
   const [notes, setNotes] = useState(editing ? noteOf(editing) : '')
+  const [publicNote, setPublicNote] = useState(editing?.public_note ?? '')
   const [more, setMore] = useState(false)
   const [priceBand, setPriceBand] = useState<number | null>(editing?.price_band ?? null)
   const [spend, setSpend] = useState(editing?.spend ?? '')
@@ -70,13 +73,14 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const [cafes, setCafes] = useState<Cafe[]>([])
+  const [cafesLoaded, setCafesLoaded] = useState(false)
   const [history, setHistory] = useState<string[]>([])
   const [showSuggest, setShowSuggest] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    listCafes().then(setCafes).catch(() => {})
+    listCafes().then(setCafes).catch(() => {}).finally(() => setCafesLoaded(true))
     myDrinkTypes(userId).then(setHistory).catch(() => {})
   }, [userId])
 
@@ -99,16 +103,28 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
     [cafes, name, city, area],
   )
 
-  // Address and map link belong to the cafe, not the visit:
-  //  * a BLANK one can be filled in by anyone;
-  //  * one that is already saved can only be changed by whoever added the cafe.
-  const { addressLocked, mapLocked } = cafeFieldLocks(existing, userId)
+  // A cafe that already exists (picked from the dropdown, or typed exactly) keeps its own details: they are
+  // shown read-only here and changed with "Edit cafe" on its page. Only a NEW cafe asks for them.
+  const isNewCafe = cafesLoaded && !existing && !!name.trim() && !!city.trim()
 
-  // When the name / city / neighbourhood match a cafe that already exists, show what is saved.
+  // Possible duplicates of a cafe that is about to be created ("did you mean...?").
+  const similar = useMemo(
+    () => (isNewCafe ? similarCafes({ name, city, area, mapUrl }, cafes) : []),
+    [isNewCafe, name, city, area, mapUrl, cafes],
+  )
+
+  // Keep the shown details in step with whichever cafe the name / city / neighbourhood point at:
+  // an existing cafe's own, or empty boxes for a new one.
+  const hadExisting = useRef(false)
   useEffect(() => {
     if (existing) {
       setAddress(existing.address ?? '')
       setMapUrl(existing.map_url ?? '')
+      hadExisting.current = true
+    } else if (hadExisting.current) {
+      setAddress('')
+      setMapUrl('')
+      hadExisting.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id])
@@ -151,7 +167,10 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
     if (!name.trim()) return setError('Give the cafe a name.')
     if (!city.trim()) return setError('Add the city. It tells same-named cafes apart.')
     if (!visitedOn) return setError('Pick the date of this visit.')
-    if (mapUrl.trim() && !/^https?:\/\//i.test(mapUrl.trim())) return setError('The map link must start with http:// or https://')
+    if (isNewCafe) {
+      const problem = newCafeProblem(address, mapUrl)
+      if (problem) return setError(problem)
+    }
 
     const parsedDrinks: VisitInput['drinks'] = []
     for (const d of drinks) {
@@ -170,7 +189,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
         verdict, currency, price_band: priceBand, spend: spend.trim(),
         opens, closes, hours_note: hoursNote.trim(),
         parking, parking_note: parkingNote.trim(), area_note: areaNote.trim(),
-        good_for: goodFor, amenities,
+        good_for: goodFor, amenities, public_note: publicNote.trim(),
       },
       drinks: parsedDrinks,
       notes: notes.trim(),
@@ -194,7 +213,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
           <button type="button" className="link mut" onClick={onClose}>Cancel</button>
           <h2 className="sheet-title">{editing ? 'Edit visit' : 'New visit'}</h2>
           <button type="button" className="link acc" onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : isNewCafe ? 'Enlist & log' : 'Save'}
           </button>
         </header>
 
@@ -235,6 +254,43 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
             <label className="field-label" htmlFor="f-date">Date of this visit</label>
             <input id="f-date" type="date" className="input sm" value={visitedOn} onChange={(e) => setVisitedOn(e.target.value)} />
           </section>
+
+          {existing && (
+            <section className="panel">
+              <span className="field-label">This cafe in the directory</span>
+              <div className="locked-value">
+                {existing.code && <span className="code">{existing.code}</span>}
+                <span><b>Address:</b> {existing.address || 'not saved yet'}</span>
+                <span><b>Map link:</b> {existing.map_url || 'not saved yet'}</span>
+                <span className="hint">
+                  Filled in for you. To change these, use “Edit cafe” on{' '}
+                  <Link to={`/cafes/${existing.id}`} onClick={onClose}>the cafe's page</Link>; every change is recorded.
+                </span>
+              </div>
+            </section>
+          )}
+
+          {isNewCafe && (
+            <section className="panel">
+              <span className="field-label">New cafe: it joins the shared directory</span>
+              {similar.length > 0 && (
+                <div className="similar" role="note">
+                  <b>Is it one of these?</b>
+                  {similar.map((x) => (
+                    <button key={x.cafe.id} type="button" className="similar-row" onClick={() => pickCafe(x.cafe)}>
+                      <span><b>{x.cafe.name}</b> <span className="muted small">{[x.cafe.area, x.cafe.city].filter(Boolean).join(', ')}</span></span>
+                      <span className="hint">{x.reason === 'same-map-link' ? 'same map link' : 'similar name'} · use this</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <label className="field-label" htmlFor="f-address">Address <span className="req">required</span></label>
+              <input id="f-address" className="input sm" value={address} placeholder="Street, building, area" onChange={(e) => setAddress(e.target.value)} />
+              <label className="field-label" htmlFor="f-map">Map link <span className="req">required</span></label>
+              <input id="f-map" type="url" className="input sm" value={mapUrl} placeholder="https://maps.app.goo.gl/…" onChange={(e) => setMapUrl(e.target.value)} />
+              <span className="hint">Everyone will see these on the cafe's page, and anyone can correct them later. Visits you log afterwards fill themselves in.</span>
+            </section>
+          )}
 
           <section className="panel">
             <div className="panel-head"><span className="field-label">How was it</span><span className="hint">tap again to clear</span></div>
@@ -287,6 +343,9 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
             <label className="field-label" htmlFor="f-notes">Private notes <span className="hint">only you can see these</span></label>
             <textarea id="f-notes" className="input sm area" value={notes} maxLength={5000}
               placeholder="Who was in, how loud it was, what stood out…" onChange={(e) => setNotes(e.target.value)} />
+            <label className="field-label" htmlFor="f-public">Share a note about this cafe <span className="hint">everyone can read this</span></label>
+            <textarea id="f-public" className="input sm area short" value={publicNote} maxLength={1000}
+              placeholder="A tip for other people: best seats, when it's quiet, what to order…" onChange={(e) => setPublicNote(e.target.value)} />
           </section>
 
           <button type="button" className="btn ghost wide" aria-expanded={more} onClick={() => setMore((m) => !m)}>
@@ -296,24 +355,6 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
           {more && (
             <>
               <section className="panel">
-                <label className="field-label" htmlFor="f-address">Address</label>
-                {addressLocked ? (
-                  <p className="locked-value">
-                    {existing?.address}
-                    <span className="hint">Saved when the cafe was added. Only the person who added it can change it.</span>
-                  </p>
-                ) : (
-                  <input id="f-address" className="input sm" value={address} onChange={(e) => setAddress(e.target.value)} />
-                )}
-                <label className="field-label" htmlFor="f-map">Map link</label>
-                {mapLocked ? (
-                  <p className="locked-value">
-                    {existing?.map_url}
-                    <span className="hint">Saved when the cafe was added. Only the person who added it can change it.</span>
-                  </p>
-                ) : (
-                  <input id="f-map" type="url" className="input sm" value={mapUrl} placeholder="https://maps.app.goo.gl/…" onChange={(e) => setMapUrl(e.target.value)} />
-                )}
                 <div className="row2">
                   <div><label className="field-label" htmlFor="f-opens">Opens</label><input id="f-opens" type="time" className="input sm" value={opens} onChange={(e) => setOpens(e.target.value)} /></div>
                   <div><label className="field-label" htmlFor="f-closes">Closes</label><input id="f-closes" type="time" className="input sm" value={closes} onChange={(e) => setCloses(e.target.value)} /></div>
@@ -356,6 +397,10 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
               </section>
             </>
           )}
+
+          <button type="button" className="btn primary" onClick={save} disabled={saving}>
+            {saving ? 'Saving…' : isNewCafe ? 'Enlist new cafe and log entry' : editing ? 'Save changes' : 'Save visit'}
+          </button>
 
           {editing && (
             <button type="button" className={`btn danger wide${confirmDelete ? ' armed' : ''}`} onClick={remove} disabled={saving}>

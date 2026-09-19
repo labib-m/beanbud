@@ -9,7 +9,7 @@ export type Cafe = {
   area: string
   address: string | null
   map_url: string | null
-  created_by?: string | null // who added the cafe (only they can change an address that is already saved)
+  code?: string // e.g. DOSE_DHA_BAN
 }
 
 export type ScoreKey = 'ambiance' | 'drinks' | 'food' | 'service' | 'crowd'
@@ -92,6 +92,7 @@ export type VisitInput = {
     area_note: string
     good_for: string[]
     amenities: string[]
+    public_note: string
   }
   drinks: { drink_type: string; price: number | null; score: number | null }[]
   notes: string
@@ -121,6 +122,8 @@ export type FullVisit = {
   area_note: string | null
   good_for: string[]
   amenities: string[]
+  public_note: string | null // shared with everyone (the private note is separate)
+  cafe_revisions?: { address: string | null; map_url: string | null } | null // the cafe details this visit was logged under
   cafes: Cafe
   visit_drinks: { id: string; drink_type: string; price: number | null; score: number | null; sort_order: number }[]
   // One-to-one embed: an object (or null). Only ever contains YOUR note.

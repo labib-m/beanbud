@@ -57,7 +57,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
   set local role authenticated;
 
-  insert into public.cafes (name, city, area) values ('Test Cafe', 'Dhaka', 'Gulshan 2') returning id into cafe;
+  insert into public.cafes (name, city, area, address, map_url) values ('Test Cafe', 'Dhaka', 'Gulshan 2', '1 Test Road', 'https://maps.example/t') returning id into cafe;
   insert into public.visits (cafe_id, visited_on, score_ambiance, score_food)
     values (cafe, '2026-09-01', 4, 5) returning id into visit;
   insert into public.visit_drinks (visit_id, drink_type, price, score)
@@ -89,12 +89,13 @@ begin
     raise notice 'PASS: alice cannot reassign her visit to someone else';
   end;
 
-  -- Alice cannot delete her cafe while visits point at it.
+  -- Nobody deletes a cafe: it is part of the shared directory. (Before 20260920000300 this was refused
+  -- only while visits pointed at it; now it is refused always.)
   begin
     delete from public.cafes where id = cafe;
-    raise exception 'FAIL: cafe with visits was deleted';
-  exception when restrict_violation or foreign_key_violation then
-    raise notice 'PASS: a cafe that still has visits cannot be deleted';
+    raise exception 'FAIL: a cafe was deleted';
+  exception when restrict_violation or foreign_key_violation or insufficient_privilege then
+    raise notice 'PASS: a cafe cannot be deleted';
   end;
 
   ------------------------------------------------------------------
@@ -147,14 +148,26 @@ begin
   if n <> 0 then raise exception 'FAIL: bob deleted alice''s visit'; end if;
   raise notice 'PASS: bob''s delete of alice''s visit removed 0 rows';
 
-  update public.cafes set name = 'Hacked' where id = cafe;
-  get diagnostics n = row_count;
-  if n <> 0 then raise exception 'FAIL: bob edited alice''s cafe'; end if;
+  -- (After 20260920000300 clients may not change a cafe's name at all, so this is refused outright;
+  --  before it, the row security rules made it change 0 rows. Either way it must not succeed.)
+  begin
+    update public.cafes set name = 'Hacked' where id = cafe;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'FAIL: bob edited alice''s cafe'; end if;
+  exception when insufficient_privilege then
+    null;
+  end;
+  select count(*) into n from public.cafes where id = cafe and name = 'Test Cafe';
+  if n <> 1 then raise exception 'FAIL: the cafe name changed'; end if;
   raise notice 'PASS: bob cannot edit a cafe alice added';
 
-  delete from public.cafes where id = cafe;
-  get diagnostics n = row_count;
-  if n <> 0 then raise exception 'FAIL: bob deleted alice''s cafe'; end if;
+  begin
+    delete from public.cafes where id = cafe;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'FAIL: bob deleted alice''s cafe'; end if;
+  exception when insufficient_privilege or restrict_violation or foreign_key_violation then
+    null;
+  end;
   raise notice 'PASS: bob cannot delete a cafe alice added';
 
   update public.visit_drinks set price = 1 where id = drink;
@@ -181,7 +194,7 @@ begin
   end;
 
   begin
-    insert into public.cafes (name, city, created_by) values ('Forged', 'Dhaka', alice);
+    insert into public.cafes (name, city, address, map_url, created_by) values ('Forged', 'Dhaka', '1 Road', 'https://x.example', alice);
     raise exception 'FAIL: bob created a cafe in alice''s name';
   exception when insufficient_privilege then
     raise notice 'PASS: bob cannot create a cafe in alice''s name';

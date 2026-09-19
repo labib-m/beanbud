@@ -1,16 +1,18 @@
-// Which cafe fields the form may offer as editable. Mirrors the database rule in
-// supabase/migrations/20260920000200_save_visit_cafe_edit.sql, so keep them in step:
-//   * a BLANK address / map link can be filled in by anyone signed in;
-//   * one that is already saved can only be changed by whoever added the cafe.
-// Pure and dependency-free so it can be tested (supabase/tests/cafe_rules.test.mjs).
+// Rules for the "cafe details" part of the visit form. Pure and dependency-free so they can be
+// tested (supabase/tests/cafe_rules.test.mjs). The database enforces the same rules.
 
-export type ExistingCafe = { address: string | null; map_url: string | null; created_by?: string | null } | undefined
+/** An existing cafe's address and map link are read-only in the visit form: change them with "Edit cafe" on its page. */
+export function detailsAreLocked(existing: object | undefined): boolean {
+  return !!existing
+}
 
-export function cafeFieldLocks(existing: ExistingCafe, userId: string) {
-  const iAddedIt = !!existing && existing.created_by === userId
-  return {
-    iAddedIt,
-    addressLocked: !!existing && !iAddedIt && !!existing.address,
-    mapLocked: !!existing && !iAddedIt && !!existing.map_url,
-  }
+/**
+ * A NEW cafe goes straight into the shared directory, so it needs an address and a map link.
+ * Returns what to tell the person, or null when it is fine.
+ */
+export function newCafeProblem(address: string, mapUrl: string): string | null {
+  if (!address.trim()) return "Add the cafe's address. It goes into the shared directory, so everyone can find it."
+  if (!mapUrl.trim()) return 'Add a map link so people can find it (paste it from your maps app).'
+  if (!/^https?:\/\//i.test(mapUrl.trim())) return 'The map link must start with http:// or https://'
+  return null
 }
