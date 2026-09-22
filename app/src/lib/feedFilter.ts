@@ -1,0 +1,50 @@
+// Search, city filter, preset chips and sorting over EVERYONE's visits (the Feed's "global" view).
+// Pure, and the only import is the shared rules (tested in supabase/tests/feed_filter.test.mjs).
+import { matchesSearch, matchesVisit, type Features, type Selected, type Sort } from './filters.ts'
+
+export type FeedRow = Features & {
+  id: string
+  cafeId: string
+  cafeName: string
+  city: string
+  area: string
+  visitedOn: string
+  createdAt: string
+  overall: number | null
+  who: string                  // the person's name and @handle, so their entries can be searched too
+  publicNote: string | null
+}
+
+export type FeedQuery = { q: string; city: string; sel: Selected; sort: Sort }
+
+const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
+const byRecent = (a: FeedRow, b: FeedRow) =>
+  b.visitedOn.localeCompare(a.visitedOn) || b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id)
+
+export function rowMatches(r: FeedRow, { q, city, sel }: Pick<FeedQuery, 'q' | 'city' | 'sel'>): boolean {
+  if (city && r.city !== city) return false
+  if (!matchesVisit(r, sel)) return false
+  return matchesSearch(q, [r.cafeName, r.area, r.city, ...r.drinks, r.publicNote, r.who])
+}
+
+/** Filter, then sort. "Most visited" means the cafes with the most visits by anyone (counted over all rows given). */
+export function filterAndSort(rows: FeedRow[], query: FeedQuery): FeedRow[] {
+  const perCafe = new Map<string, number>()
+  for (const r of rows) perCafe.set(r.cafeId, (perCafe.get(r.cafeId) ?? 0) + 1)
+
+  const out = rows.filter((r) => rowMatches(r, query))
+  switch (query.sort) {
+    case 'score':
+      return out.sort((a, b) => (b.overall ?? -1) - (a.overall ?? -1) || byRecent(a, b))
+    case 'visits':
+      return out.sort((a, b) => (perCafe.get(b.cafeId) ?? 0) - (perCafe.get(a.cafeId) ?? 0) || byRecent(a, b))
+    case 'name':
+      return out.sort((a, b) => collator.compare(a.cafeName, b.cafeName) || byRecent(a, b))
+    default:
+      return out.sort(byRecent)
+  }
+}
+
+/** The cities that appear, for the city menu. */
+export const citiesOf = (rows: FeedRow[]): string[] =>
+  [...new Set(rows.map((r) => r.city).filter(Boolean))].sort((a, b) => collator.compare(a, b))

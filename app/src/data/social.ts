@@ -2,10 +2,11 @@ import { supabase } from '../lib/supabase'
 import type { RecentVisit } from '../lib/recent'
 import type { FeedVisit, LiteVisit, Profile } from '../lib/types'
 
-export async function fetchFeed(limit = 60): Promise<FeedVisit[]> {
+/** Everyone's latest visits. 1000 is plenty for search and filters to work across the whole group. */
+export async function fetchFeed(limit = 1000): Promise<FeedVisit[]> {
   const { data, error } = await supabase
     .from('visits')
-    .select('id, user_id, cafe_id, visited_on, created_at, overall, currency, cafes(id, name, city, area), visit_drinks(drink_type, price, sort_order), profiles(display_name, handle, avatar)')
+    .select('id, user_id, cafe_id, visited_on, created_at, overall, currency, good_for, amenities, public_note, cafes(id, name, city, area), visit_drinks(drink_type, price, sort_order), profiles(display_name, handle, avatar)')
     .order('visited_on', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(limit)

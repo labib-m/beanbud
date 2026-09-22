@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { FilterBar } from '../components/FilterBar'
 import { Directory } from './Directory'
 import { Stars } from '../components/Stars'
 import { useVisits } from '../data/VisitsProvider'
@@ -10,24 +11,61 @@ import { useLoad } from '../data/useLoad'
 import { displayName, handleText, relTime } from '../lib/people'
 import { groupByCafe, money } from '../lib/stats'
 import { currencySymbol } from '../lib/types'
+import { citiesOf, filterAndSort, type FeedRow } from '../lib/feedFilter'
+import { emptySelection, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
+import { featuresOf } from '../lib/visitFeatures'
+
+const SHOW_AT_MOST = 100
 
 function Activity() {
   const { session } = useAuth()
   const me = session!.user.id
   const { visits: mine } = useVisits()
-  const { data, error, loading } = useLoad(fetchFeed, [])
+  const { data, error, loading } = useLoad(() => fetchFeed(), [])
+
+  // The same four controls as the Notebook. The search reaches every person's entries; the quick
+  // filters are still YOUR most-used tags, drinks and amenities, applied to everyone's visits.
+  const [q, setQ] = useState('')
+  const [city, setCity] = useState('')
+  const [sort, setSort] = useState<Sort>('recent')
+  const [sel, setSel] = useState<Selected>(emptySelection)
+  const presets = useMemo(() => topPresets((mine ?? []).map(featuresOf)), [mine])
+
+  const rows: FeedRow[] = useMemo(
+    () => (data ?? []).map((v) => ({
+      id: v.id, cafeId: v.cafe_id, cafeName: v.cafes.name, city: v.cafes.city, area: v.cafes.area,
+      visitedOn: v.visited_on, createdAt: v.created_at, overall: v.overall == null ? null : Number(v.overall),
+      who: `${displayName(v.profiles)} ${handleText(v.profiles)}`.trim(), publicNote: v.public_note,
+      goodFor: v.good_for ?? [], drinks: v.visit_drinks.map((d) => d.drink_type), amenities: v.amenities ?? [],
+    })),
+    [data],
+  )
+  const byId = useMemo(() => new Map((data ?? []).map((v) => [v.id, v])), [data])
+  const cities = useMemo(() => citiesOf(rows), [rows])
+  const matched = useMemo(() => filterAndSort(rows, { q, city, sel, sort }), [rows, q, city, sel, sort])
+  const shown = matched.slice(0, SHOW_AT_MOST).map((r) => byId.get(r.id)!)
 
   // My average per cafe, for the "You rate it" comparison line.
   const myMeans = useMemo(() => new Map(groupByCafe(mine ?? []).map((g) => [g.cafeId, g.mean])), [mine])
 
   return (
     <>
-      <p className="muted spaced">{loading ? 'Loading…' : 'Newest first'}</p>
+      <FilterBar
+        scope="everyone" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities} sort={sort} onSort={setSort}
+        presets={presets} selected={sel}
+        onToggle={(cat, label) => setSel((cur) => toggleSelected(cur, cat, label))}
+        onClearChips={() => setSel(emptySelection())}
+      />
+      <p className="muted spaced">
+        {loading ? 'Loading…' : rows.length === 0 ? '' : matched.length === rows.length ? `${rows.length} ${rows.length === 1 ? 'visit' : 'visits'}` : `${matched.length} of ${rows.length} visits`}
+        {matched.length > SHOW_AT_MOST && ` · showing the first ${SHOW_AT_MOST}. Narrow it with a search or filter.`}
+      </p>
       {error && <p className="error" role="alert">{error}</p>}
       {data && data.length === 0 && <p className="muted">Nothing here yet. Log a visit to get it started.</p>}
+      {data && data.length > 0 && matched.length === 0 && <p className="muted">No visits match. Clear the search, the city or the quick filters.</p>}
 
       <ul className="cards">
-        {data?.map((v) => {
+        {shown.map((v) => {
           const own = v.user_id === me
           const mineForCafe = myMeans.get(v.cafe_id)
           const drink = v.visit_drinks[0]

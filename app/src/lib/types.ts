@@ -160,6 +160,9 @@ export type FeedVisit = {
   created_at: string
   overall: number | null
   currency: string | null
+  good_for: string[]
+  amenities: string[]
+  public_note: string | null
   cafes: { id: string; name: string; city: string; area: string }
   visit_drinks: { drink_type: string; price: number | null; sort_order: number }[]
   profiles: { display_name: string | null; handle: string | null; avatar: string | null } | null

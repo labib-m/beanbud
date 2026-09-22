@@ -5,25 +5,28 @@ import { Stars } from '../components/Stars'
 import { useVisits } from '../data/VisitsProvider'
 import { fmtDate, groupByCafe, trend } from '../lib/stats'
 import { VERDICTS } from '../lib/types'
-
-type Sort = 'recent' | 'score' | 'visits' | 'name'
+import { FilterBar } from '../components/FilterBar'
+import { emptySelection, matchesCafe, matchesSearch, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
+import { featuresOf } from '../lib/visitFeatures'
 
 export function Notebook() {
   const { visits, error, openLog } = useVisits()
   const [q, setQ] = useState('')
   const [city, setCity] = useState('')
   const [sort, setSort] = useState<Sort>('recent')
+  const [sel, setSel] = useState<Selected>(emptySelection)
 
   const groups = useMemo(() => groupByCafe(visits ?? []), [visits])
   const cities = useMemo(() => [...new Set(groups.map((g) => g.cafe.city))].sort(), [groups])
 
+  // Quick filters: this person's own most-used tags, drinks and amenities.
+  const presets = useMemo(() => topPresets((visits ?? []).map(featuresOf)), [visits])
+
   const shown = useMemo(() => {
-    const needle = q.trim().toLowerCase()
     const list = groups.filter((g) => {
       if (city && g.cafe.city !== city) return false
-      if (!needle) return true
-      const hay = [g.cafe.name, g.cafe.city, g.cafe.area, ...g.visits.flatMap((v) => v.visit_drinks.map((d) => d.drink_type))]
-      return hay.join(' ').toLowerCase().includes(needle)
+      if (!matchesCafe(g.visits.map(featuresOf), sel)) return false
+      return matchesSearch(q, [g.cafe.name, g.cafe.city, g.cafe.area, ...g.visits.flatMap((v) => v.visit_drinks.map((d) => d.drink_type))])
     })
     const by: Record<Sort, (a: (typeof list)[number], b: (typeof list)[number]) => number> = {
       recent: (a, b) => b.lastDate.localeCompare(a.lastDate),
@@ -32,7 +35,7 @@ export function Notebook() {
       name: (a, b) => a.cafe.name.localeCompare(b.cafe.name),
     }
     return list.sort(by[sort])
-  }, [groups, q, city, sort])
+  }, [groups, q, city, sort, sel])
 
   return (
     <main className="screen">
@@ -53,23 +56,14 @@ export function Notebook() {
 
       {visits && visits.length > 0 && (
         <>
-          <div className="controls">
-            <input className="input sm" type="search" placeholder="Search name, area or drink" aria-label="Search" value={q} onChange={(e) => setQ(e.target.value)} />
-            <div className="row2">
-              <select className="input sm" aria-label="City" value={city} onChange={(e) => setCity(e.target.value)}>
-                <option value="">All cities</option>
-                {cities.map((c) => <option key={c}>{c}</option>)}
-              </select>
-              <select className="input sm" aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-                <option value="recent">Most recent</option>
-                <option value="score">Highest rated</option>
-                <option value="visits">Most visited</option>
-                <option value="name">Name A–Z</option>
-              </select>
-            </div>
-          </div>
+          <FilterBar
+            scope="notebook" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities} sort={sort} onSort={setSort}
+            presets={presets} selected={sel}
+            onToggle={(cat, label) => setSel((cur) => toggleSelected(cur, cat, label))}
+            onClearChips={() => setSel(emptySelection())}
+          />
 
-          {shown.length === 0 && <p className="muted">No matches. Clear the search or the city.</p>}
+          {shown.length === 0 && <p className="muted">No matches. Clear the search, the city or the quick filters.</p>}
           <ul className="cards">
             {shown.map((g) => {
               const t = trend(g)
