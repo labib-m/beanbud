@@ -38,16 +38,16 @@ export function authorName(profile: Profile): string {
 
 export type NotifyKind = 'INSERT' | 'UPDATE'
 
-/**
- * The notification everyone but the author gets. No title, only a body: iOS always shows its
- * own two lines above whatever we send (the app's name, then a fixed "from <app name>"
- * disclosure for every web-push notification) regardless of our title — tested empty and
- * non-empty, iOS shows the same "from Bean Bud" either way, so there's nothing to gain by
- * filling it in. The body is the one line that is genuinely ours.
- */
+// The bold header on the notification. iOS always adds its own "from Bean Bud" line right below
+// this no matter what it says (that one really is fixed — it's Apple's disclosure that this is a
+// web app, not a native one). A blank title falls back to showing "Bean Bud" there instead, which
+// just repeats that fixed line, so a short title of our own reads better than leaving it empty.
+const HEADER = 'Brewhi!'
+
+/** The notification everyone but the author gets. */
 export function notificationFor(kind: NotifyKind, cafe: { id: string; name: string }, who: string) {
   const verb = kind === 'INSERT' ? 'just logged' : 'just updated their visit to'
-  return { title: '', body: `${who} ${verb} ${cafe.name}`, url: `/cafes/${cafe.id}` }
+  return { title: HEADER, body: `${who} ${verb} ${cafe.name}`, url: `/cafes/${cafe.id}` }
 }
 
 type WebhookBody = {

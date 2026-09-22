@@ -25,16 +25,16 @@ test('authorName mirrors app/src/lib/people.ts displayName()', () => {
   assert.equal(m.authorName(null), 'Someone')
 })
 
-test('notificationFor: a new visit says "just logged", no title, links to the cafe page', () => {
+test('notificationFor: a new visit gets the "Brewhi!" header and says "just logged", links to the cafe page', () => {
   const n = m.notificationFor('INSERT', { id: 'c1', name: 'Dose Espresso' }, 'Nabila Haque')
-  assert.equal(n.title, '')
+  assert.equal(n.title, 'Brewhi!')
   assert.equal(n.body, 'Nabila Haque just logged Dose Espresso')
   assert.equal(n.url, '/cafes/c1')
 })
 
-test('notificationFor: editing an existing visit says "just updated", no title', () => {
+test('notificationFor: editing an existing visit says "just updated", same header', () => {
   const n = m.notificationFor('UPDATE', { id: 'c1', name: 'Dose Espresso' }, '@nabs')
-  assert.equal(n.title, '')
+  assert.equal(n.title, 'Brewhi!')
   assert.equal(n.body, '@nabs just updated their visit to Dose Espresso')
   assert.equal(n.url, '/cafes/c1')
 })
