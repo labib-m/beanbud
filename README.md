@@ -39,6 +39,7 @@ Run these in the Supabase SQL editor, in order, pasting each whole file:
 6. `supabase/migrations/20260920000200_save_visit_cafe_edit.sql`
 7. `supabase/migrations/20260920000300_cafe_directory.sql` (undoes 5 and 6, which were a stop-gap)
 8. `supabase/migrations/20260920000400_save_visit_update_details.sql`
+9. `supabase/migrations/20260922000100_push_subscriptions.sql` (needed for push notifications — see that section below)
 
 Then run the checks in `supabase/tests/`. Each ends with `ALL CHECKS PASSED`. They test the **latest** rules, so run them after all the migrations: `rls_check.sql`, `save_visit_check.sql`, `pin_attempts_check.sql`, `cafe_directory_check.sql`, `save_visit_update_check.sql`.
 
@@ -110,6 +111,46 @@ node --test supabase/tests/pin_auth.test.mjs
 
 Open the live site in Safari, tap Share, then **Add to Home Screen**. Open it from the new icon and create your account or sign in there. It stays signed in on that phone. If an older shortcut exists, delete it and add it again so it picks up the app icon and full-screen mode.
 
+## Push notifications
+
+When someone logs or edits a visit, everyone else who has turned notifications on gets a push: "*Name* logged *Cafe*", tapping it opens that cafe's page. It uses the open web-push standard, not Apple or Google's own notification service, so there is nothing to register with either company.
+
+**Real constraints, not bugs:**
+- On iPhone, this only works for someone who added the app to their **home screen** (iOS 16.4+) and tapped **Turn on** for notifications from inside it. Visiting the plain website in a Safari tab can never receive one — that's an Apple rule, not a Bean Bud setting.
+- If someone deletes and re-adds the home-screen icon, or clears Safari's site data, they need to tap **Turn on** again.
+- There's no reliable delivery receipt. A subscription the push service reports as gone (the person uninstalled, or it expired) is quietly forgotten; nothing retries it.
+
+**Set it up once, in this order:**
+
+**1. Generate a VAPID key pair** (the signature that proves a notification came from this app, not stored anywhere but Supabase and your own notes):
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+It prints a **Public Key** and a **Private Key**. The public one is fine to share; paste it as `VITE_VAPID_PUBLIC_KEY` in `.env.local` (and in Vercel, see Deploy below). Keep the private one only for the next step — never put it in `.env.local`, Vercel, or anywhere in the app.
+
+**2. Deploy the Edge Function.** Create a function named exactly `send-push` and paste in `supabase/functions/send-push/index.ts`. Redeploy it whenever that file changes. **Turn OFF "Verify JWT"** for it, same reason as `pin-auth`: the caller here is Supabase's own webhook, not a signed-in person, and the function checks its own secret instead (next step).
+
+**3. Secrets** (Edge Functions → Secrets), four more:
+
+| Secret | What it is |
+| --- | --- |
+| `VAPID_PUBLIC_KEY` | The public key from step 1 (yes, the same value as `VITE_VAPID_PUBLIC_KEY`). |
+| `VAPID_PRIVATE_KEY` | The private key from step 1. **If it is lost, everyone has to turn notifications on again** — there's no recovering old subscriptions without it. |
+| `VAPID_SUBJECT` | `mailto:` plus an email of yours. The push standard requires it; push services may use it to contact you if something's misbehaving. It is never shown to users. |
+| `PUSH_WEBHOOK_SECRET` | A long random string (`openssl rand -hex 32 \| pbcopy`, same as the others). Proves the request calling this function really is your database, not a stranger who found the URL. |
+
+**4. Database Webhook** (Database → Webhooks → Create a new hook):
+- Name: `send-push-on-visit` (or anything).
+- Table: `visits`. Events: **Insert** and **Update**.
+- Type: **Supabase Edge Functions**, function: `send-push`.
+- HTTP Headers: add one, `x-webhook-secret` = the same value as `PUSH_WEBHOOK_SECRET` above.
+
+**5. Database migration.** Run `supabase/migrations/20260922000100_push_subscriptions.sql` in the SQL editor — it creates the table that remembers who has notifications on.
+
+**6. Turn it on**, on the You screen. Each device (each phone, each home-screen icon) is its own subscription.
+
 ## How access works
 
 - Everyone signed in can read cafes, visits, drinks and profiles.
@@ -121,7 +162,7 @@ Open the live site in Safari, tap Share, then **Add to Home Screen**. Open it fr
 
 **Vercel** (Project Settings):
 - Root Directory: `app`
-- Environment Variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- Environment Variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_VAPID_PUBLIC_KEY`
 
 Then complete the sign-in setup above.
 
