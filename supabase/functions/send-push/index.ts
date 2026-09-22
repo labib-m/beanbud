@@ -38,10 +38,20 @@ export function authorName(profile: Profile): string {
 
 export type NotifyKind = 'INSERT' | 'UPDATE'
 
-/** The notification everyone but the author gets. */
+/**
+ * The notification everyone but the author gets.
+ *
+ * iOS always shows its own two lines above whatever we send here (the app's name, then a fixed
+ * "from <app name>" disclosure for every web-push notification) and ignores this title entirely
+ * for that purpose — tested empty and non-empty, iOS shows the same "from Bean Bud" either way.
+ * There is no field that removes it; it's Apple's, not ours. Title and body are set to the same
+ * message so the one line we do control still looks right on browsers that show a title
+ * (Android, desktop Chrome) instead of iOS's fixed two lines.
+ */
 export function notificationFor(kind: NotifyKind, cafe: { id: string; name: string }, who: string) {
-  const verb = kind === 'INSERT' ? 'logged' : 'updated their visit to'
-  return { title: 'Bean Bud', body: `${who} ${verb} ${cafe.name}`, url: `/cafes/${cafe.id}` }
+  const verb = kind === 'INSERT' ? 'just logged' : 'just updated their visit to'
+  const message = `${who} ${verb} ${cafe.name}`
+  return { title: message, body: message, url: `/cafes/${cafe.id}` }
 }
 
 type WebhookBody = {
