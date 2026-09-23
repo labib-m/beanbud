@@ -9,7 +9,7 @@ type Check = 'idle' | 'checking' | 'free' | 'taken' | 'invalid'
 export function Onboarding({ profile, onDone, onSignOut }: { profile: Profile; onDone: () => void; onSignOut?: () => void }) {
   const [displayName, setDisplayName] = useState(profile.display_name ?? '')
   const [handle, setHandle] = useState(profile.handle ?? '')
-  const [avatar, setAvatar] = useState<string | null>(profile.avatar ?? 'bean')
+  const [avatar, setAvatar] = useState<string | null>(profile.avatar ?? '🫘')
   const [remote, setRemote] = useState<{ handle: string; free: boolean | null } | null>(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)

@@ -6,7 +6,7 @@ const MASK = `url("data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='${STAR_PATH}'/></svg>`,
 )}")`
 
-export function Stars({ value, size = 14, fill = 'var(--acc)', empty = 'var(--line)' }: { value: number; size?: number; fill?: string; empty?: string }) {
+export function Stars({ value, size = 14, fill = 'var(--accText)', empty = 'var(--line2)' }: { value: number; size?: number; fill?: string; empty?: string }) {
   const p = Math.max(0, Math.min(1, value / 5)) * 100
   const mask = `${MASK} 0 0 / ${size}px ${size}px repeat-x`
   return (

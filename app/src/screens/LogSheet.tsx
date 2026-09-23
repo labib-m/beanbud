@@ -355,7 +355,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
                   <input type="number" min="0" step="any" inputMode="decimal" aria-label={`Price of ${d.type}`}
                     value={d.price} onChange={(e) => patchDrink(i, { price: e.target.value })} />
                 </span>
-                <StarInput label={`${d.type} rating`} value={d.score} size={16} color="var(--sage)" onChange={(v) => patchDrink(i, { score: v })} />
+                <StarInput label={`${d.type} rating`} value={d.score} size={16} hitWidth={22} onChange={(v) => patchDrink(i, { score: v })} />
                 <button type="button" className="link mut" aria-label={`Remove ${d.type}`} onClick={() => toggleDrink(d.type)}>×</button>
               </div>
             ))}

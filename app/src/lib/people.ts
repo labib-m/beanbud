@@ -9,11 +9,15 @@ export function displayName(p: Namey): string {
 export const handleText = (p: Namey) => (p?.handle ? '@' + p.handle : '')
 export const initial = (p: Namey) => displayName(p).replace(/^@/, '')[0]?.toUpperCase() ?? '?'
 
-/** Stable avatar colour from the user id. */
-export function toneOf(id: string): 'acc' | 'sage' | 'deep' {
+// specv2 §1.3: five pastel tones, the same in both themes. A person keeps one tone regardless
+// of which emoji they're using as their avatar (previously tone followed the glyph choice).
+const TONES = ['#ffc6a5', '#ccdbb2', '#e1eecc', '#ffe1d0', '#f0fae1'] as const
+
+/** Stable avatar background colour from the user id. */
+export function toneOf(id: string): string {
   let h = 0
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return (['acc', 'sage', 'deep'] as const)[h % 3]
+  return TONES[h % TONES.length]
 }
 
 export function relTime(iso: string): string {

@@ -1,33 +1,32 @@
-/* Tokens from design/spec.md §1. Light is the default; dark follows the
-   system unless data-theme is set explicitly. */
+/* Tokens from designv2/specv2.md §1. Dark is the fixed default (not tied to the system
+   setting); [data-theme="light"] is defined and ready for a future toggle, but nothing sets
+   it yet. --err, --inv, --invInk, --invMut, --invLine, --accDeep and --sageDeep aren't in
+   specv2 but are kept (with dark-first values) because screens not yet restyled still use them. */
 :root {
-  --bg: #f5ead8; --surf: #ebddc5; --surf2: #f9f4ed;
-  --ink: #201e1d; --mut: rgba(32, 30, 29, 0.6); --fai: rgba(32, 30, 29, 0.42);
-  --line: rgba(32, 30, 29, 0.14);
-  --acc: #c67139; --accDeep: #8c491a; --accInk: #f9f4ed;
-  --sage: #7a8a5e; --sageDeep: #56633f;
-  --err: #8c491a;
-  --inv: #16140f; --invInk: #f5ead8; --invMut: rgba(245, 234, 216, 0.58); --invLine: rgba(245, 234, 216, 0.16);
+  --bg: #16140f; --surf: #211e19; --surf2: #2b2721;
+  --ink: #f9f4ed; --ink2: rgba(249, 244, 237, 0.86); --mut: rgba(249, 244, 237, 0.58);
+  --lab: rgba(249, 244, 237, 0.52); --fai: rgba(249, 244, 237, 0.40);
+  --line: rgba(249, 244, 237, 0.09); --line2: rgba(249, 244, 237, 0.20);
+  --acc: #f6a06b; --accText: #f6a06b; --accMuted: color-mix(in srgb, var(--acc) 55%, transparent);
+  --accInk: #16140f; --accDeep: #ffc6a5;
+  --sage: #aebf92; --sageDeep: #ccdbb2;
+  --err: #ffc6a5;
+  --navBg: rgba(22, 20, 15, 0.94); --scrim: rgba(0, 0, 0, 0.55);
+  --inv: #f9f4ed; --invInk: #201e1d; --invMut: rgba(32, 30, 29, 0.58); --invLine: rgba(32, 30, 29, 0.16);
   --display: 'Caprasimo', Georgia, serif;
   --text: Figtree, 'Noto Sans Bengali', 'Noto Sans Thai', system-ui, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #16140f; --surf: #221f1a; --surf2: #2b2721;
-    --ink: #f9f4ed; --mut: rgba(249, 244, 237, 0.62); --fai: rgba(249, 244, 237, 0.42);
-    --line: rgba(249, 244, 237, 0.14);
-    --acc: #f6a06b; --accDeep: #ffc6a5; --accInk: #16140f;
-    --sage: #aebf92; --sageDeep: #ccdbb2; --err: #ffc6a5;
-    --inv: #f9f4ed; --invInk: #201e1d; --invMut: rgba(32, 30, 29, 0.58); --invLine: rgba(32, 30, 29, 0.16);
-  }
-}
-:root[data-theme='dark'] {
-  --bg: #16140f; --surf: #221f1a; --surf2: #2b2721;
-  --ink: #f9f4ed; --mut: rgba(249, 244, 237, 0.62); --fai: rgba(249, 244, 237, 0.42);
-  --line: rgba(249, 244, 237, 0.14);
-  --acc: #f6a06b; --accDeep: #ffc6a5; --accInk: #16140f;
-  --sage: #aebf92; --sageDeep: #ccdbb2; --err: #ffc6a5;
-  --inv: #f9f4ed; --invInk: #201e1d; --invMut: rgba(32, 30, 29, 0.58); --invLine: rgba(32, 30, 29, 0.16);
+:root[data-theme='light'] {
+  --bg: #f5ead8; --surf: #ebddc5; --surf2: #e3d3b8;
+  --ink: #201e1d; --ink2: rgba(32, 30, 29, 0.86); --mut: rgba(32, 30, 29, 0.62);
+  --lab: rgba(32, 30, 29, 0.58); --fai: rgba(32, 30, 29, 0.46);
+  --line: rgba(32, 30, 29, 0.10); --line2: rgba(32, 30, 29, 0.22);
+  --acc: #c67139; --accText: #8c491a; --accMuted: color-mix(in srgb, var(--acc) 55%, transparent);
+  --accInk: #f9f4ed; --accDeep: #8c491a;
+  --sage: #56633f; --sageDeep: #56633f;
+  --err: #8c491a;
+  --navBg: rgba(245, 234, 216, 0.94); --scrim: rgba(32, 30, 29, 0.45);
+  --inv: #16140f; --invInk: #f5ead8; --invMut: rgba(245, 234, 216, 0.58); --invLine: rgba(245, 234, 216, 0.16);
 }
 
 * { box-sizing: border-box; }
@@ -106,7 +105,7 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .rate-row { display: flex; align-items: center; justify-content: space-between; }
 .rate-label { color: var(--mut); font-size: 13.5px; }
 .stars { display: inline-flex; }
-.star { background: none; border: 0; padding: 2px; margin: 0; line-height: 0; cursor: pointer; min-width: 30px; min-height: 30px; display: grid; place-items: center; }
+.star { background: none; border: 0; padding: 0; margin: 0; line-height: 0; cursor: pointer; display: grid; place-items: center; }
 .star:focus-visible { outline: 2px solid var(--acc); border-radius: 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { font: inherit; font-weight: 600; font-size: 12px; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
@@ -185,10 +184,10 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .post-compare { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding-top: 9px; margin-top: 4px; }
 .post.other .post-compare { border-top-color: var(--invLine); }
 .compare { margin-left: auto; color: var(--sage); font-weight: 700; font-size: 13px; text-decoration: none; }
-.avatar { flex: none; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); color: var(--accInk); }
-.avatar.acc { background: var(--acc); }
-.avatar.sage { background: var(--sage); }
-.avatar.deep { background: var(--accDeep); color: var(--bg); }
+/* Background comes from an inline style (lib/people.ts toneOf(), one of 5 fixed pastel tones,
+   same in both themes) so the fallback-initial text needs its own fixed dark colour — --ink
+   would be near-white in the dark theme and unreadable on a pastel background. */
+.avatar { flex: none; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); color: #201e1d; }
 
 /* ---- people & profile ---- */
 .card.person { flex-direction: row; gap: 14px; align-items: flex-start; }
@@ -217,13 +216,7 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .onboard { padding-top: 40px; }
 .onboard-preview { display: flex; gap: 14px; align-items: center; background: var(--surf); border-radius: 24px; padding: 14px 16px; }
 .onboard-preview b { font: 400 17px/1.1 var(--display); }
-.avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.avatar-opt { aspect-ratio: 1; border-radius: 50%; border: 3px solid transparent; font-size: 26px; cursor: pointer; display: grid; place-items: center; color: var(--accInk); }
-.avatar-opt.acc { background: var(--acc); }
-.avatar-opt.sage { background: var(--sage); }
-.avatar-opt.deep { background: var(--accDeep); }
-.avatar-opt[aria-checked='true'] { border-color: var(--ink); }
-.avatar-opt:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.avatar-emoji-input { width: 72px; text-align: center; font-size: 28px; padding: 12px; }
 .hint-line { margin: -4px 0 0 6px; font-size: 12px; color: var(--mut); }
 .hint-line.free { color: var(--sageDeep); }
 .hint-line.taken, .hint-line.invalid { color: var(--err); }
