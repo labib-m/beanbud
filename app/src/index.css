@@ -77,18 +77,23 @@ body {
 .visit-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .disc { flex: none; width: 54px; height: 54px; border-radius: 50%; background: var(--surf2); display: grid; place-items: center; font: 400 19px/1 var(--display); }
 
-/* ---- log sheet ---- */
-.overlay { position: fixed; inset: 0; background: rgba(22, 20, 15, 0.55); display: flex; justify-content: center; align-items: flex-end; z-index: 10; }
-.sheet { background: var(--bg); width: 100%; max-width: 430px; height: 94vh; border-radius: 32px 32px 0 0; display: flex; flex-direction: column; overflow: hidden; }
-.sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px 10px; border-bottom: 1px solid var(--line); }
-.sheet-title { font: 400 18px/1.1 var(--display); margin: 0; }
-.sheet-body { overflow-y: auto; padding: 14px 16px 40px; display: flex; flex-direction: column; gap: 13px; }
+/* ---- log sheet (specv2 §7 "Log sheet") ---- */
+.overlay { position: fixed; inset: 0; background: var(--scrim); display: flex; justify-content: center; align-items: flex-end; z-index: 10; }
+.sheet { background: var(--bg); width: 100%; max-width: 430px; height: 94vh; border-radius: 28px 28px 0 0; display: flex; flex-direction: column; overflow: hidden; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px 12px; border-bottom: 1px solid var(--line); }
+.sheet-title { font: 700 15px/1.2 var(--text); color: var(--ink); margin: 0; }
+.sheet-body { overflow-y: auto; padding: 18px 22px 28px; display: flex; flex-direction: column; gap: 13px; }
 .link { background: none; border: 0; font: inherit; font-weight: 700; font-size: 14.5px; cursor: pointer; padding: 6px; }
 .link.mut { color: var(--mut); font-weight: 600; }
-.link.acc { color: var(--acc); }
+.link.acc { color: var(--accText); }
 .link:disabled { opacity: 0.6; }
 .panel { background: var(--surf); border-radius: 24px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; }
+.panel .section-label { margin: 0; }
+.currency-toggle { font: 600 12px var(--text); color: var(--accText); background: none; border: 0; padding: 4px; cursor: pointer; }
+.expander { width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 14px 0; font: 700 13.5px var(--text); color: var(--ink); cursor: pointer; }
+.expander .caret { color: var(--fai); }
+.save-note { margin: 0; text-align: center; font-size: 12px; color: var(--fai); }
 .hint { color: var(--sageDeep); font-size: 11.5px; font-weight: 400; }
 .banner { background: var(--surf2); border-radius: 16px; padding: 10px 14px; }
 .name-input { font: 400 20px/1.2 var(--display); color: var(--ink); background: none; border: 0; padding: 4px 0; width: 100%; }
@@ -113,10 +118,10 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .pill-select { font: inherit; font-weight: 600; font-size: 13px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink); padding: 6px 10px; }
 .add-row { display: flex; gap: 8px; align-items: center; }
 .drink-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--surf2); border-radius: 18px; padding: 9px 13px; }
-.drink-name { flex: 1; min-width: 100px; font-weight: 600; font-size: 13px; }
-.price { display: flex; align-items: center; gap: 4px; }
-.price i { font-style: normal; color: var(--mut); }
-.price input { width: 76px; font: inherit; font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; }
+.drink-name { flex: 1; min-width: 100px; font-weight: 600; font-size: 14.5px; }
+.price { display: flex; align-items: center; gap: 2px; background: var(--surf); border-radius: 999px; padding: 6px 12px; }
+.price i { font-style: normal; color: var(--mut); font-weight: 700; font-size: 14px; }
+.price input { width: 48px; font: 700 14px var(--text); color: var(--ink); background: none; border: 0; padding: 0; }
 .btn.wide { align-self: stretch; text-align: center; }
 
 /* ---- tab bar ---- */

@@ -88,7 +88,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
   const suggestions = useMemo(() => {
     const q = norm(name)
     if (!q) return []
-    return cafes.filter((c) => norm(c.name).includes(q)).slice(0, 6)
+    return cafes.filter((c) => norm(c.name).includes(q)).slice(0, 3)
   }, [cafes, name])
 
   const catalog = useMemo(() => {
@@ -320,7 +320,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
           )}
 
           <section className="panel">
-            <div className="panel-head"><span className="field-label">How was it</span><span className="hint">tap again to clear</span></div>
+            <div className="panel-head"><span className="section-label">Rate it</span><span className="hint">tap again to clear</span></div>
             {SCORES.map((s) => (
               <div className="rate-row" key={s.key}>
                 <span className="rate-label">{s.label}</span>
@@ -331,8 +331,8 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
 
           <section className="panel">
             <div className="panel-head">
-              <span className="field-label">What I drank</span>
-              <select className="pill-select" aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              <span className="section-label">Coffee</span>
+              <select className="currency-toggle" aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                 {CURRENCIES.map(([code, sym]) => <option key={code} value={code}>{sym.trim()} {code}</option>)}
               </select>
             </div>
@@ -375,8 +375,9 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
               placeholder="A tip for other people: best seats, when it's quiet, what to order…" onChange={(e) => setPublicNote(e.target.value)} />
           </section>
 
-          <button type="button" className="btn ghost wide" aria-expanded={more} onClick={() => setMore((m) => !m)}>
-            {more ? 'Hide the optional bits' : 'Add the optional bits'}
+          <button type="button" className="expander" aria-expanded={more} onClick={() => setMore((m) => !m)}>
+            <span>Price band, good for, amenities, parking</span>
+            <span className="caret" aria-hidden="true">{more ? '︿' : '﹀'}</span>
           </button>
 
           {more && (
@@ -428,6 +429,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
           <button type="button" className="btn primary" onClick={save} disabled={saving}>
             {saving ? 'Saving…' : isNewCafe ? 'Enlist new cafe and log entry' : editing ? 'Save changes' : 'Save visit'}
           </button>
+          {!editing && <p className="save-note">A name and five taps is a complete visit.</p>}
 
           {editing && (
             <button type="button" className={`btn danger wide${confirmDelete ? ' armed' : ''}`} onClick={remove} disabled={saving}>
