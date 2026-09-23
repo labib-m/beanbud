@@ -89,3 +89,6 @@ export const SORT_OPTIONS: { value: Sort; label: string }[] = [
   { value: 'visits', label: 'Most visited' },
   { value: 'name', label: 'Name A–Z' },
 ]
+// Shorter wording for the Notebook's sort tabs (specv2 §8.1), where SORT_OPTIONS' fuller
+// labels (used in Feed's sort pill) would crowd four tabs across one row.
+export const SORT_TAB_LABEL: Record<Sort, string> = { recent: 'Recent', score: 'Top rated', visits: 'Most visited', name: 'Name' }

@@ -1,5 +1,4 @@
-import { SORT_OPTIONS, type Category, type Presets, type Selected, type Sort } from '../lib/filters'
-import { PresetChips } from './PresetChips'
+import { CATEGORIES, CATEGORY_LABEL, SORT_OPTIONS, hasSelection, isSelected, type Category, type Presets, type Selected, type Sort } from '../lib/filters'
 
 type Props = {
   scope: 'notebook' | 'everyone'   // notebook = only your own entries; everyone = every person's entries
@@ -10,6 +9,8 @@ type Props = {
   cities: string[]
   sort: Sort
   onSort: (s: Sort) => void
+  /** Notebook drives sort with its own tabs instead (specv2 §8.1); this hides the redundant sort pill. */
+  hideSort?: boolean
   presets: Presets
   selected: Selected
   onToggle: (cat: Category, label: string) => void
@@ -17,27 +18,47 @@ type Props = {
 }
 
 const COPY = {
-  notebook: { placeholder: 'Search your notebook: cafe, area or drink', hint: 'Searching only your own entries' },
+  notebook: { placeholder: 'Search your notebook: cafe, drink or note', hint: 'Searching only your own entries' },
   everyone: { placeholder: "Search everyone: cafe, drink, note or person", hint: "Searching every person's entries" },
 }
 
-/** The same four controls on the Notebook and the Feed. Only the reach of the search differs. */
-export function FilterBar({ scope, q, onQ, city, onCity, cities, sort, onSort, presets, selected, onToggle, onClearChips }: Props) {
+/** The same controls on the Notebook and the Feed (specv2 §7 Filter row). Only the reach of the search, and whether sort shows here, differ. */
+export function FilterBar({ scope, q, onQ, city, onCity, cities, sort, onSort, hideSort, presets, selected, onToggle, onClearChips }: Props) {
   const copy = COPY[scope]
+  const chips = CATEGORIES.flatMap((cat) => presets[cat].map((label) => ({ cat, label })))
   return (
     <div className="controls">
-      <input className="input sm" type="search" placeholder={copy.placeholder} aria-label={copy.placeholder} value={q} onChange={(e) => onQ(e.target.value)} />
-      <p className={`scope-hint ${scope}`}>{copy.hint}</p>
-      <div className="row2">
-        <select className="input sm" aria-label="City" value={city} onChange={(e) => onCity(e.target.value)}>
-          <option value="">All cities</option>
-          {cities.map((c) => <option key={c}>{c}</option>)}
-        </select>
-        <select className="input sm" aria-label="Sort" value={sort} onChange={(e) => onSort(e.target.value as Sort)}>
-          {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+      <div className="search-field">
+        <span className="search-icon" aria-hidden="true">⌕</span>
+        <input className="search-input" type="search" placeholder={copy.placeholder} aria-label={copy.placeholder} value={q} onChange={(e) => onQ(e.target.value)} />
+        {q && <button type="button" className="search-clear" onClick={() => onQ('')}>Clear</button>}
       </div>
-      <PresetChips presets={presets} selected={selected} onToggle={onToggle} onClear={onClearChips} />
+      <p className={`scope-hint ${scope}`}>{copy.hint}</p>
+      <div className="filter-row">
+        <span className="filter-pill-wrap">
+          <select className="filter-pill" aria-label="City" value={city} onChange={(e) => onCity(e.target.value)}>
+            <option value="">All cities</option>
+            {cities.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </span>
+        {!hideSort && (
+          <span className="filter-pill-wrap">
+            <select className="filter-pill" aria-label="Sort" value={sort} onChange={(e) => onSort(e.target.value as Sort)}>
+              {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </span>
+        )}
+        {chips.length > 0 && <span className="filter-sep" aria-hidden="true" />}
+        {chips.map(({ cat, label }) => (
+          <button
+            key={cat + label} type="button" className="chip" title={CATEGORY_LABEL[cat]}
+            aria-pressed={isSelected(selected, cat, label)} onClick={() => onToggle(cat, label)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {hasSelection(selected) && <button type="button" className="link clear-chips" onClick={onClearChips}>Clear quick filters</button>}
     </div>
   )
 }
