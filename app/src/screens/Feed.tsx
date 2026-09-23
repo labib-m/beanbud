@@ -149,6 +149,7 @@ export function Feed() {
           <button role="tab" aria-selected={tab === 'directory'} onClick={() => go('directory')}>Directory</button>
         </div>
       </div>
+      {tab === 'activity' && <p className="people-sub">Where others bean</p>}
       {tab === 'directory' ? <Directory /> : <Activity />}
     </main>
   )

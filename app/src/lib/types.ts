@@ -1,6 +1,6 @@
 // Hand-written to match supabase/migrations. Keep in step when tables change.
 
-export type Verdict = 'regular' | 'return' | 'once'
+export type Verdict = 'regular' | 'return' | 'once' | 'plain' | 'desperate'
 
 export type Cafe = {
   id: string
@@ -33,6 +33,8 @@ export const VERDICTS: { value: Verdict; label: string }[] = [
   { value: 'regular', label: 'Make it a regular' },
   { value: 'return', label: 'Worth returning' },
   { value: 'once', label: 'One and done' },
+  { value: 'plain', label: 'Regular' },
+  { value: 'desperate', label: 'Okay for Desperate Caffeine' },
 ]
 
 export const PARKING = ['Own lot, easy', 'Valet', 'Street, usually free spots', 'Street, tight', 'No parking', "Didn't drive"]

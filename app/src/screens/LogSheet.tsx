@@ -234,7 +234,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
       <div className="sheet">
         <header className="sheet-head">
           <button type="button" className="link mut" onClick={onClose}>Cancel</button>
-          <h2 className="sheet-title">{editing ? 'Edit visit' : 'New visit'}</h2>
+          <h2 className="sheet-title">{editing ? 'Edit Brew' : 'New Brew'}</h2>
           <button type="button" className="link acc" onClick={save} disabled={saving}>
             {saving ? 'Saving…' : isNewCafe ? 'Enlist & log' : 'Save'}
           </button>

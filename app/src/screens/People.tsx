@@ -27,7 +27,7 @@ export function People() {
   return (
     <main className="screen">
       <h1 className="title">People<span className="dot">.</span></h1>
-      <p className="people-sub">{loading ? 'Loading…' : 'Everyone keeps their own notebook.'}</p>
+      <p className="people-sub">{loading ? 'Loading…' : 'Fellow Caffeiners'}</p>
       {error && <p className="error" role="alert">{error}</p>}
       <ul className="plain-rows">
         {rows.map(({ p, s }) => (

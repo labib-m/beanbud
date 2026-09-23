@@ -44,6 +44,7 @@ export function You() {
   return (
     <main className="screen">
       <h1 className="title">You<span className="dot">.</span></h1>
+      <p className="people-sub">How You bean?</p>
       {loading && <p className="muted">Loading…</p>}
       {error && <p className="error" role="alert">{error}</p>}
 
