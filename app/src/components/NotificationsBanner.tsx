@@ -1,42 +1,31 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { currentPushStatus, enablePush, type PushStatus } from '../lib/push'
-import { NEW_USER_NOTIF_KEY, shouldShowNotifBanner } from '../lib/notifBanner'
+import { shouldShowNotifBanner } from '../lib/notifBanner'
 
 /**
- * A floating banner, on every page, nudging a new account to turn notifications on — shown
- * until they do. SignIn.tsx sets NEW_USER_NOTIF_KEY right after a sign-up; this clears it only
- * once push is confirmed on, so the banner can reappear later too (e.g. it can't do anything
- * on an unsupported plain Safari tab, but comes back once that same account opens the Home
- * Screen icon, where push becomes possible). Never shown to an existing user signing in.
+ * A floating banner, on every page, nudging anyone signed in to turn notifications on — shown
+ * until they do. It rechecks the live status on every page navigation (Shell, which mounts
+ * this once, never remounts on its own), so it also reacts to notifications being turned off
+ * again later, or turned on elsewhere (e.g. the toggle on You). Hides itself where push isn't
+ * possible at all (an unsupported browser, or a plain Safari tab on iOS before the person has
+ * added the Home Screen icon).
  */
-function isNewUser(): boolean {
-  try {
-    return localStorage.getItem(NEW_USER_NOTIF_KEY) === '1'
-  } catch {
-    return false // private browsing or storage blocked: nothing to show
-  }
-}
-
 export function NotificationsBanner() {
+  const location = useLocation()
   const [status, setStatus] = useState<PushStatus | 'checking'>('checking')
-  const [newUser] = useState(isNewUser)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
   useEffect(() => {
-    if (!newUser) return
     currentPushStatus().then(setStatus).catch(() => setStatus('unsupported'))
-  }, [newUser])
+  }, [location.pathname])
 
   async function turnOn() {
     setErr('')
     setBusy(true)
     try {
-      const next = await enablePush()
-      setStatus(next)
-      if (next === 'on') {
-        try { localStorage.removeItem(NEW_USER_NOTIF_KEY) } catch { /* worst case it just asks again next time */ }
-      }
+      setStatus(await enablePush())
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't turn on notifications.")
     } finally {
@@ -44,7 +33,7 @@ export function NotificationsBanner() {
     }
   }
 
-  if (!shouldShowNotifBanner(newUser, status)) return null
+  if (!shouldShowNotifBanner(status)) return null
 
   return (
     <div className="notif-banner" role="status">

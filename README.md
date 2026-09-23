@@ -153,7 +153,7 @@ It prints a **Public Key** and a **Private Key**. The public one is fine to shar
 
 **6. Turn it on**, on the You screen. Each device (each phone, each home-screen icon) is its own subscription.
 
-**New accounts also get a floating reminder.** Right after signing up, a banner (`app/src/components/NotificationsBanner.tsx`) floats above the tab bar on every screen, saying to turn notifications on. It stays until they actually do — it isn't dismissible — and it can reappear later too: it hides itself where push isn't possible yet (for example a plain Safari tab on iOS, before the person has added the Home Screen icon), and comes back once it is. Never shown to an existing person signing in. The logic is pure and tested in `app/src/lib/notifBanner.ts` / `supabase/tests/notif_banner.test.mjs`.
+**Anyone whose notifications are off gets a floating reminder.** A banner (`app/src/components/NotificationsBanner.tsx`) floats above the tab bar on every screen, saying to turn notifications on, for as long as they're off or blocked — new or long-time person, it doesn't matter. It isn't dismissible; it rechecks the real status on every page you open, so it disappears the moment they're turned on (from the banner's own button, or from You) and comes back if they're ever turned off again. It also hides itself where push isn't possible at all (for example a plain Safari tab on iOS, before the person has added the Home Screen icon). The logic is pure and tested in `app/src/lib/notifBanner.ts` / `supabase/tests/notif_banner.test.mjs`.
 
 ## How access works
 

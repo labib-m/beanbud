@@ -18,14 +18,13 @@ export function People() {
     if (!data) return []
     return data.profiles
       .map((p) => ({ p, s: statsFor(data.visits.filter((v) => v.user_id === p.id)) }))
-      .filter((r) => r.s.visits > 0 || r.p.id === me)
       .sort((a, b) => b.s.last.localeCompare(a.s.last))
-  }, [data, me])
+  }, [data])
 
   return (
     <main className="screen">
       <h1 className="title">People<span className="dot">.</span></h1>
-      <p className="muted spaced">{loading ? 'Loading…' : `${rows.length} ${rows.length === 1 ? 'notebook' : 'notebooks'}`}</p>
+      <p className="muted spaced">{loading ? 'Loading…' : `${rows.length} ${rows.length === 1 ? 'person' : 'people'}`}</p>
       {error && <p className="error" role="alert">{error}</p>}
       <ul className="cards">
         {rows.map(({ p, s }) => (
