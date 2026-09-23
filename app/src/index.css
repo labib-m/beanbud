@@ -409,3 +409,37 @@ textarea.input.area.short { min-height: 70px; }
 .visit-log-body { padding: 0 0 14px; display: flex; flex-direction: column; gap: 4px; }
 .visit-log-drinks { margin: 6px 0; display: flex; flex-direction: column; gap: 4px; }
 .visit-log-note { margin: 7px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
+
+/* ---- People (specv2 §8.5) ---- */
+.people-sub { margin: 0 0 22px; font-size: 13.5px; color: var(--mut); }
+.people-head { align-items: flex-start; }
+.people-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.people-id .row-name { margin: 0 0 2px; }
+
+/* ---- Profile: You and others (specv2 §8.6) ---- */
+.profile-id { display: flex; align-items: center; gap: 16px; margin: 22px 0 16px; }
+.stat-line { margin: 0; font-size: 14.5px; color: var(--ink2); }
+.avg-line { margin: 3px 0 0; display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--mut); }
+.avg-star { color: var(--accText); font-size: 12px; }
+.avg-line b { font-weight: 600; font-size: 13px; color: var(--ink); }
+.profile-intro { margin: 14px 0 0; font-size: 13.5px; color: var(--ink2); }
+.overlap-row { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+.overlap-row .row-name { flex: 1; }
+.overlap-scores { flex: none; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; }
+.overlap-diff { color: var(--accText); }
+
+/* ---- Monthly summary / activity strip, You only (specv2 §7, §9.4) ---- */
+.month-summary { margin-top: 48px; }
+.month-summary h3 { font: 400 24px/1.05 var(--display); color: var(--ink); margin: 0; }
+.month-summary h3 .year { color: var(--fai); }
+.month-summary .stat-line { margin-top: 4px; }
+.activity-strip { margin-top: 16px; }
+.activity-bars { display: grid; gap: 3px; height: 26px; align-items: end; }
+.activity-bar { border-radius: 999px; width: 100%; }
+.activity-bar.acc { background: var(--acc); }
+.activity-bar.accMuted { background: var(--accMuted); }
+.activity-bar.line { background: var(--line); }
+.activity-bar.line2 { background: var(--line2); }
+.activity-labels { display: grid; margin-top: 7px; font-size: 10.5px; color: var(--fai); }
+.activity-label.today { font-weight: 700; color: var(--accText); text-align: center; }
+.activity-label.last { text-align: right; }

@@ -160,7 +160,7 @@ export function CafeDetail() {
   if (!group && !page) {
     return (
       <main className="screen">
-        <Link className="back" to="/">← Notebook</Link>
+        <Link className="back" to="/">‹ Notebook</Link>
         <p className="muted">That cafe isn't in your notebook.</p>
       </main>
     )
@@ -183,7 +183,7 @@ export function CafeDetail() {
 
   return (
     <main className="screen detail">
-      <Link className="back" to="/">← Notebook</Link>
+      <Link className="back" to="/">‹ Notebook</Link>
       <header className="cafe-header">
         <h1 className="detail-name">{cafe.name}</h1>
         {group

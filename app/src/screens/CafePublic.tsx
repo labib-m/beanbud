@@ -16,9 +16,9 @@ export function CafePublic() {
 
   const myVisitCount = useMemo(() => (mine ?? []).filter((v) => v.cafe_id === cafeId).length, [mine, cafeId])
 
-  if (error) return <main className="screen"><Link className="back" to="/feed?tab=directory">← Directory</Link><p className="error" role="alert">{error}</p></main>
+  if (error) return <main className="screen"><Link className="back" to="/feed?tab=directory">‹ Directory</Link><p className="error" role="alert">{error}</p></main>
   if (loading && !data) return <main className="screen"><p className="muted">Loading…</p></main>
-  if (!data) return <main className="screen"><Link className="back" to="/feed?tab=directory">← Directory</Link><p className="muted">That cafe isn't here.</p></main>
+  if (!data) return <main className="screen"><Link className="back" to="/feed?tab=directory">‹ Directory</Link><p className="muted">That cafe isn't here.</p></main>
 
   return (
     <>

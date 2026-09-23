@@ -45,7 +45,7 @@ export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, on
   return (
     <main className="screen detail">
       <header className="detail-head">
-        <Link className="back" to="/feed?tab=directory">← Directory</Link>
+        <Link className="back" to="/feed?tab=directory">‹ Directory</Link>
         <div className="card-top">
          <div>
           <h1 className="detail-name">{cafe.name}</h1>

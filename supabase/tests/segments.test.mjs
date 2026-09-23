@@ -2,7 +2,7 @@
 // Run:  node --test supabase/tests/segments.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { notebookBucketOf, relativeDate, segmentByDay, segmentNotebook } from '../../app/src/lib/segments.ts'
+import { daysInMonth, monthActivityBars, monthActivityCounts, notebookBucketOf, relativeDate, segmentByDay, segmentNotebook } from '../../app/src/lib/segments.ts'
 
 const TODAY = '2026-09-23' // a Wednesday; not otherwise meaningful
 
@@ -95,4 +95,39 @@ test('segmentByDay: a month transition still gets a divider, same as Notebook', 
   const out = segmentByDay(items, TODAY, () => ({ visits: 5, cafes: 2 }))
   assert.equal(out[1].kind, 'divider')
   assert.equal(out[1].month, 'August')
+})
+
+test('daysInMonth: handles 30/31/28/29-day months, including leap years', () => {
+  assert.equal(daysInMonth(2026, 8), 30)  // September (0-indexed 8)
+  assert.equal(daysInMonth(2026, 0), 31)  // January
+  assert.equal(daysInMonth(2026, 1), 28)  // February, not a leap year
+  assert.equal(daysInMonth(2028, 1), 29)  // February, leap year
+})
+
+test('monthActivityCounts: one entry per day of the month, counting only dates in that month', () => {
+  const counts = monthActivityCounts(['2026-09-01', '2026-09-01', '2026-09-15', '2026-08-31', '2026-10-01'], 2026, 8)
+  assert.equal(counts.length, 30)
+  assert.equal(counts[0], 2)   // 1 Sep, twice
+  assert.equal(counts[14], 1)  // 15 Sep
+  assert.equal(counts.reduce((a, b) => a + b, 0), 3) // the Aug/Oct dates don't count
+})
+
+test('monthActivityBars: bar height by visit count', () => {
+  const bars = monthActivityBars([0, 1, 2, 5], 2026, 8, '2026-09-23')
+  assert.deepEqual(bars.map((b) => b.height), [4, 16, 26, 26])
+})
+
+test('monthActivityBars: today and yesterday are --acc, earlier days --accMuted', () => {
+  // day 22 = yesterday, day 23 = today, day 21 = two days ago, relative to "today" 2026-09-23
+  const counts = new Array(30).fill(0).map((_, i) => (i === 20 || i === 21 || i === 22 ? 1 : 0))
+  const bars = monthActivityBars(counts, 2026, 8, '2026-09-23')
+  assert.equal(bars[20].color, 'accMuted') // 21 Sep
+  assert.equal(bars[21].color, 'acc')      // 22 Sep, yesterday
+  assert.equal(bars[22].color, 'acc')      // 23 Sep, today
+})
+
+test('monthActivityBars: an empty day is --line2 if past, --line if still in the future', () => {
+  const bars = monthActivityBars(new Array(30).fill(0), 2026, 8, '2026-09-23')
+  assert.equal(bars[0].color, 'line2')   // 1 Sep: past
+  assert.equal(bars[29].color, 'line')   // 30 Sep: future
 })

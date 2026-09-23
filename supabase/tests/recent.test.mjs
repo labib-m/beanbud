@@ -17,15 +17,28 @@ test('no visits gives empty lists', () => {
   assert.deepEqual(recentDrinks([]), [])
 })
 
-test('cafes: newest first, each cafe once, at most 3', () => {
+test('cafes: newest first, each cafe once, at most `n`', () => {
   const vs = [
     visit('a', '2026-09-01'), visit('b', '2026-09-05'), visit('a', '2026-09-10'),
     visit('c', '2026-09-03'), visit('d', '2026-08-01'), visit('b', '2026-09-02'),
   ]
-  const got = recentCafes(vs)
+  const got = recentCafes(vs, 3)
   assert.deepEqual(got.map((c) => c.cafeId), ['a', 'b', 'c'])       // a (10 Sep), b (5 Sep), c (3 Sep); d is 4th
   assert.equal(got[0].lastVisit, '2026-09-10')                      // a's LATEST visit, not its first
   assert.equal(got[1].lastVisit, '2026-09-05')
+})
+
+test('cafes: default is the latest 5, per specv2 §8.6.6', () => {
+  const vs = ['a', 'b', 'c', 'd', 'e', 'f'].map((c, i) => visit(c, `2026-09-0${i + 1}`))
+  assert.equal(recentCafes(vs).length, 5)
+})
+
+test('cafes: carries the most recent visit\'s own drinks and currency, for the featured card\'s extra line', () => {
+  const v = visit('a', '2026-09-10', ['Latte'], { currency: 'BDT' })
+  v.visit_drinks[0].price = 350
+  const got = recentCafes([v])
+  assert.deepEqual(got[0].drinks, [{ type: 'Latte', price: 350 }])
+  assert.equal(got[0].currency, 'BDT')
 })
 
 test('cafes: fewer than 3 distinct cafes just returns what exists', () => {
@@ -47,13 +60,13 @@ test('cafes: rating comes from the most recent visit, and numeric strings are co
   assert.equal(recentCafes([visit('a', '2026-09-01')])[0].overall, null)
 })
 
-test('drinks: the 3 most recent logged, newest visit first, within-visit order kept', () => {
+test('drinks: the latest N logged, newest visit first, within-visit order kept', () => {
   const vs = [
     visit('a', '2026-09-01', ['Espresso']),
     visit('b', '2026-09-10', ['Latte', 'Cortado']),
     visit('c', '2026-09-05', ['Mocha', 'Flat white']),
   ]
-  const got = recentDrinks(vs)
+  const got = recentDrinks(vs, 3)
   assert.deepEqual(got.map((d) => d.drink), ['Latte', 'Cortado', 'Mocha'])
   assert.equal(got[0].cafeName, 'Cafe B')
   assert.equal(got[0].visitedOn, '2026-09-10')
@@ -62,6 +75,15 @@ test('drinks: the 3 most recent logged, newest visit first, within-visit order k
 test('drinks: the same drink at two cafes counts twice (different moments)', () => {
   const vs = [visit('a', '2026-09-01', ['Latte']), visit('b', '2026-09-02', ['Latte'])]
   assert.deepEqual(recentDrinks(vs).map((d) => d.cafeId), ['b', 'a'])
+})
+
+test('drinks: default is the latest 4, and carries price/currency, per specv2 §8.6.7', () => {
+  const vs = ['a', 'b', 'c', 'd', 'e'].map((c, i) => visit(c, `2026-09-0${i + 1}`, [c + '-drink'], { currency: 'BDT' }))
+  vs[vs.length - 1].visit_drinks[0].price = 300 // the most recent one (highest index date)
+  const got = recentDrinks(vs)
+  assert.equal(got.length, 4)
+  assert.equal(got[0].price, 300)
+  assert.equal(got[0].currency, 'BDT')
 })
 
 test('drinks: sort_order decides the order within one visit, and a visit with no drinks is skipped', () => {

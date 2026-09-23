@@ -2,10 +2,12 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { Stars } from '../components/Stars'
 import { fetchLiteVisits, fetchProfiles } from '../data/social'
 import { useLoad } from '../data/useLoad'
 import { displayName, handleText, statsFor } from '../lib/people'
 
+/** specv2 §8.5: You always first, then everyone else by their most recent activity. */
 export function People() {
   const { session } = useAuth()
   const me = session!.user.id
@@ -16,27 +18,32 @@ export function People() {
 
   const rows = useMemo(() => {
     if (!data) return []
-    return data.profiles
-      .map((p) => ({ p, s: statsFor(data.visits.filter((v) => v.user_id === p.id)) }))
-      .sort((a, b) => b.s.last.localeCompare(a.s.last))
-  }, [data])
+    const withStats = data.profiles.map((p) => ({ p, s: statsFor(data.visits.filter((v) => v.user_id === p.id)) }))
+    const mine = withStats.find((r) => r.p.id === me)
+    const others = withStats.filter((r) => r.p.id !== me).sort((a, b) => b.s.last.localeCompare(a.s.last))
+    return mine ? [mine, ...others] : others
+  }, [data, me])
 
   return (
     <main className="screen">
       <h1 className="title">People<span className="dot">.</span></h1>
-      <p className="muted spaced">{loading ? 'Loading…' : `${rows.length} ${rows.length === 1 ? 'person' : 'people'}`}</p>
+      <p className="people-sub">{loading ? 'Loading…' : 'Everyone keeps their own notebook.'}</p>
       {error && <p className="error" role="alert">{error}</p>}
-      <ul className="cards">
+      <ul className="plain-rows">
         {rows.map(({ p, s }) => (
           <li key={p.id}>
-            <Link className="card person" to={p.id === me ? '/you' : `/people/${p.id}`}>
-              <Avatar id={p.id} profile={p} size={46} />
-              <div className="person-body">
-                <h2 className="person-name">{p.id === me ? 'You' : displayName(p)}</h2>
-                {handleText(p) && <p className="handle">{handleText(p)}</p>}
-                {p.tagline && <p className="muted small">{p.tagline}</p>}
-                <p className="muted small"><b>{s.cafes}</b> cafes · <b>{s.visits}</b> visits · avg <b>{s.average ? s.average.toFixed(1) : '–'}</b></p>
+            <Link className="plain-row" to={p.id === me ? '/you' : `/people/${p.id}`}>
+              <div className="row-top people-head">
+                <div className="people-id">
+                  <Avatar id={p.id} profile={p} size={46} />
+                  <div>
+                    <h2 className="row-name">{p.id === me ? 'You' : displayName(p)} {handleText(p) && <span className="handle">{handleText(p)}</span>}</h2>
+                    <p className="row-meta">{[p.home_city, `${s.cafes} ${s.cafes === 1 ? 'cafe' : 'cafes'}`, `${s.visits} ${s.visits === 1 ? 'visit' : 'visits'}`].filter(Boolean).join(' · ')}</p>
+                  </div>
+                </div>
+                <span className="row-rating"><b>{s.average ? s.average.toFixed(1) : '–'}</b><Stars value={s.average} size={14} /></span>
               </div>
+              {p.tagline && <p className="row-extra">{p.tagline}</p>}
             </Link>
           </li>
         ))}

@@ -7,8 +7,9 @@ export type RecentVisit = {
   visited_on: string // YYYY-MM-DD
   created_at: string
   overall: number | null
+  currency: string | null
   cafes: { name: string; city: string; area: string }
-  visit_drinks: { drink_type: string; score: number | null; sort_order: number }[]
+  visit_drinks: { drink_type: string; score: number | null; price: number | null; sort_order: number }[]
 }
 
 export type RecentCafe = {
@@ -18,6 +19,9 @@ export type RecentCafe = {
   city: string
   lastVisit: string
   overall: number | null // the rating from that most recent visit
+  // The most recent visit's own drinks (specv2 §8.6.6: the featured card's extra line lists these).
+  drinks: { type: string; price: number | null }[]
+  currency: string | null
 }
 
 export type RecentDrink = {
@@ -26,6 +30,8 @@ export type RecentDrink = {
   cafeName: string
   visitedOn: string
   score: number | null
+  price: number | null
+  currency: string | null
 }
 
 /** Newest first: by visit date, then by when it was logged. Does not change the input. */
@@ -36,7 +42,7 @@ export function newestFirst(visits: RecentVisit[]): RecentVisit[] {
 }
 
 /** The `n` most recently visited DIFFERENT cafes. */
-export function recentCafes(visits: RecentVisit[], n = 3): RecentCafe[] {
+export function recentCafes(visits: RecentVisit[], n = 5): RecentCafe[] {
   const seen = new Set<string>()
   const out: RecentCafe[] = []
   for (const v of newestFirst(visits)) {
@@ -49,6 +55,8 @@ export function recentCafes(visits: RecentVisit[], n = 3): RecentCafe[] {
       city: v.cafes.city,
       lastVisit: v.visited_on,
       overall: v.overall == null ? null : Number(v.overall),
+      drinks: [...v.visit_drinks].sort((a, b) => a.sort_order - b.sort_order).map((d) => ({ type: d.drink_type, price: d.price })),
+      currency: v.currency,
     })
     if (out.length === n) break
   }
@@ -56,12 +64,12 @@ export function recentCafes(visits: RecentVisit[], n = 3): RecentCafe[] {
 }
 
 /** The `n` most recently logged drinks, newest visit first, in the order they were listed within a visit. */
-export function recentDrinks(visits: RecentVisit[], n = 3): RecentDrink[] {
+export function recentDrinks(visits: RecentVisit[], n = 4): RecentDrink[] {
   const out: RecentDrink[] = []
   for (const v of newestFirst(visits)) {
     const drinks = [...v.visit_drinks].sort((a, b) => a.sort_order - b.sort_order)
     for (const d of drinks) {
-      out.push({ drink: d.drink_type, cafeId: v.cafe_id, cafeName: v.cafes.name, visitedOn: v.visited_on, score: d.score })
+      out.push({ drink: d.drink_type, cafeId: v.cafe_id, cafeName: v.cafes.name, visitedOn: v.visited_on, score: d.score, price: d.price, currency: v.currency })
       if (out.length === n) return out
     }
   }

@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { MonthActivityStrip } from '../components/MonthActivityStrip'
 import { RecentSections } from '../components/RecentSections'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { NotificationsToggle } from '../components/NotificationsToggle'
@@ -9,6 +10,8 @@ import { fetchLiteVisits, fetchProfiles, updateProfile, type ProfileEdit } from 
 import { useLoad } from '../data/useLoad'
 import { SetPin } from './SetPin'
 import { displayName, emptyProfile, handleText, statsFor } from '../lib/people'
+import { MONTH_NAMES, monthActivityCounts } from '../lib/segments'
+import { todayLocal } from '../lib/stats'
 
 export function You() {
   const { session, signOut } = useAuth()
@@ -16,10 +19,27 @@ export function You() {
   const [tick, setTick] = useState(0)
   const { data, error, loading } = useLoad(async () => {
     const [profiles, visits] = await Promise.all([fetchProfiles(), fetchLiteVisits()])
-    return { profile: profiles.find((p) => p.id === me) ?? emptyProfile(me), stats: statsFor(visits.filter((v) => v.user_id === me)) }
+    const mine = visits.filter((v) => v.user_id === me)
+    return { profile: profiles.find((p) => p.id === me) ?? emptyProfile(me), stats: statsFor(mine), mine }
   }, [me, tick])
   const [editing, setEditing] = useState(false)
   const [changingPin, setChangingPin] = useState(false)
+
+  // specv2 §8.6.8 / §9.4: only for the current month, and only when it has at least one visit.
+  const today = todayLocal()
+  const [ty, tm] = today.split('-').map(Number)
+  const month = useMemo(() => {
+    if (!data) return null
+    const counts = monthActivityCounts(data.mine.map((v) => v.visited_on), ty, tm - 1)
+    const inMonth = data.mine.filter((v) => v.visited_on.startsWith(`${ty}-${String(tm).padStart(2, '0')}`))
+    if (inMonth.length === 0) return null
+    return {
+      counts,
+      visits: inMonth.length,
+      cafes: new Set(inMonth.map((v) => v.cafe_id)).size,
+      cities: new Set(inMonth.map((v) => v.cafes.city)).size,
+    }
+  }, [data, ty, tm])
 
   return (
     <main className="screen">
@@ -31,23 +51,34 @@ export function You() {
 
       {data && !editing && !changingPin && (
         <>
-          <div className="you-card">
-            <Avatar id={me} profile={data.profile} size={64} />
+          <div className="profile-id">
+            <Avatar id={me} profile={data.profile} size={58} />
             <div>
-              <h2 className="detail-name">{displayName(data.profile) === 'Someone' ? 'Add your name' : displayName(data.profile)}</h2>
+              <h2 className="row-name">{displayName(data.profile) === 'Someone' ? 'Add your name' : displayName(data.profile)}</h2>
               {handleText(data.profile) && <p className="handle">{handleText(data.profile)}</p>}
-              {data.profile.home_city && <p className="muted">{data.profile.home_city} · home city</p>}
+              {data.profile.home_city && <p className="muted small">{data.profile.home_city}</p>}
             </div>
           </div>
-          {data.profile.tagline && <p className="tagline">{data.profile.tagline}</p>}
-          {data.profile.usual_order && <div className="usual"><span>USUAL</span><b>{data.profile.usual_order}</b></div>}
-          <div className="tiles">
-            <div><b>{data.stats.cafes}</b><span>cafes</span></div>
-            <div><b>{data.stats.visits}</b><span>visits</span></div>
-            <div><b>{data.stats.cities}</b><span>cities</span></div>
-            <div><b>{data.stats.average ? data.stats.average.toFixed(1) : '–'}</b><span>average</span></div>
-          </div>
+          <p className="stat-line">
+            {data.stats.cafes} {data.stats.cafes === 1 ? 'cafe' : 'cafes'} · {data.stats.visits} {data.stats.visits === 1 ? 'visit' : 'visits'} · {data.stats.cities} {data.stats.cities === 1 ? 'city' : 'cities'}
+          </p>
+          <p className="avg-line">
+            <span className="avg-star" aria-hidden="true">★</span>
+            <b>{data.stats.average ? data.stats.average.toFixed(1) : '–'}</b> average
+            {data.profile.usual_order && <> · usually {data.profile.usual_order}</>}
+          </p>
+          {data.profile.tagline && <p className="profile-intro">{data.profile.tagline}</p>}
+
           <RecentSections userId={me} own />
+
+          {month && (
+            <section className="section month-summary">
+              <h3>{MONTH_NAMES[tm - 1]}<span className="year"> {ty}</span></h3>
+              <p className="stat-line">{month.visits} {month.visits === 1 ? 'visit' : 'visits'} · {month.cafes} {month.cafes === 1 ? 'cafe' : 'cafes'} · {month.cities} {month.cities === 1 ? 'city' : 'cities'}</p>
+              <MonthActivityStrip counts={month.counts} year={ty} month={tm - 1} today={today} />
+            </section>
+          )}
+
           <NotificationsToggle />
           <p className="muted spaced">Other people see your name, username and these details. Your notes stay private.</p>
           <div className="row-btns">

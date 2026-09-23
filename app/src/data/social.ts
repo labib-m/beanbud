@@ -75,7 +75,7 @@ export const HANDLE_RULE = /^[A-Za-z0-9_.-]{2,24}$/
 export async function fetchRecentActivity(userId: string): Promise<RecentVisit[]> {
   const { data, error } = await supabase
     .from('visits')
-    .select('id, cafe_id, visited_on, created_at, overall, cafes(name, city, area), visit_drinks(drink_type, score, sort_order)')
+    .select('id, cafe_id, visited_on, created_at, overall, currency, cafes(name, city, area), visit_drinks(drink_type, score, price, sort_order)')
     .eq('user_id', userId)
     .order('visited_on', { ascending: false })
     .order('created_at', { ascending: false })

@@ -2,11 +2,11 @@
 // supabase/tests/segments.test.mjs. Dates are plain YYYY-MM-DD strings throughout; "today" is
 // always passed in rather than read from the clock, so this is fully testable.
 
-const MONTH_NAMES = [
+export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+export const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function ymd(iso: string): { y: number; m: number; d: number } {
   const [y, m, d] = iso.split('-').map(Number)
@@ -14,10 +14,13 @@ function ymd(iso: string): { y: number; m: number; d: number } {
 }
 
 /** Whole days from `a` to `b` (positive when `b` is later), ignoring time of day. */
-function daysBetween(a: string, b: string): number {
+export function daysBetween(a: string, b: string): number {
   const A = ymd(a), B = ymd(b)
   return Math.round((Date.UTC(B.y, B.m, B.d) - Date.UTC(A.y, A.m, A.d)) / 86400000)
 }
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const isoOf = (year: number, month: number, day: number) => `${year}-${pad2(month + 1)}-${pad2(day)}`
 
 /**
  * specv2 §9.1: "Today" / "Yesterday" / "18 Sep" / "18 Sep 2025", for a row's own metadata line
@@ -110,4 +113,38 @@ export function segmentByDay<T extends { date: string }>(
   items: T[], today: string, countMonth: (year: number, month: number) => { visits: number; cafes: number },
 ): DateBlock<T>[] {
   return segment(items, today, (item) => dayBucketOf(item.date, today), countMonth)
+}
+
+// ---------------------------------------------------------------------------------------
+// specv2 §7 "Month activity strip" / §9.4 monthly summary (You profile only).
+
+export const daysInMonth = (year: number, month: number): number => new Date(year, month + 1, 0).getDate()
+
+/** How many of `dates` (YYYY-MM-DD) fall on each day of `year`/`month`, one entry per day. */
+export function monthActivityCounts(dates: string[], year: number, month: number): number[] {
+  const counts = new Array(daysInMonth(year, month)).fill(0)
+  for (const d of dates) {
+    const { y, m, d: day } = ymd(d)
+    if (y === year && m === month) counts[day - 1]++
+  }
+  return counts
+}
+
+export type DayBar = { day: number; count: number; height: 4 | 16 | 26; color: 'acc' | 'accMuted' | 'line' | 'line2' }
+
+/**
+ * One bar per day: height by visit count (0 -> 4px, 1 -> 16px, 2+ -> 26px), colour --acc for
+ * today/yesterday's bars, --accMuted for earlier ones, and for an empty day, --line if it's
+ * still in the future or --line2 if it's already passed.
+ */
+export function monthActivityBars(counts: number[], year: number, month: number, today: string): DayBar[] {
+  return counts.map((count, i) => {
+    const day = i + 1
+    const iso = isoOf(year, month, day)
+    const height = count === 0 ? 4 : count === 1 ? 16 : 26
+    let color: DayBar['color']
+    if (count === 0) color = daysBetween(today, iso) > 0 ? 'line' : 'line2'
+    else color = daysBetween(iso, today) <= 1 ? 'acc' : 'accMuted'
+    return { day, count, height, color }
+  })
 }
