@@ -111,6 +111,8 @@ node --test supabase/tests/pin_auth.test.mjs
 
 Open the live site in Safari, tap Share, then **Add to Home Screen**. Open it from the new icon and create your account or sign in there. It stays signed in on that phone. If an older shortcut exists, delete it and add it again so it picks up the app icon and full-screen mode.
 
+**New accounts get walked through this automatically.** Right after someone on an iPhone or iPad creates an account, a one-time pop-up (`app/src/components/AddToHomeScreenGuide.tsx`) shows the Share → Add to Home Screen steps and warns them they'll need to sign in again with their username and PIN the first time they open the new icon (a real limitation: a browser tab and a Home Screen icon are separate, unconnected sessions on iOS). It never shows to an existing person signing in, on Android or desktop, or a second time on the same device — the logic behind that is pure and tested in `app/src/lib/addToHomeScreen.ts` / `supabase/tests/add_to_home_screen.test.mjs`.
+
 ## Push notifications
 
 When someone logs or edits a visit, everyone else who has turned notifications on gets a push: "*Name* logged *Cafe*", tapping it opens that cafe's page. It uses the open web-push standard, not Apple or Google's own notification service, so there is nothing to register with either company.
