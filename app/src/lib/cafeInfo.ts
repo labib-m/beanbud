@@ -54,6 +54,30 @@ export function publicNotes(visits: CafeVisit[], n = 5): PublicNote[] {
 
 export const visitorCount = (visits: CafeVisit[]) => new Set(visits.map((v) => v.user_id)).size
 
+export type FriendAt = { userId: string; who: Who; visits: number; average: number }
+
+/**
+ * Specv2 §8.2.3 "Friends here": everyone but `me` who has visited, with their visit count and
+ * their own average overall at this cafe (0 when they never rated it). Most visits first, then
+ * by name, for a stable order.
+ */
+export function friendsAt(visits: CafeVisit[], me: string): FriendAt[] {
+  const m = new Map<string, { who: Who; overalls: number[]; n: number }>()
+  for (const v of visits) {
+    if (v.user_id === me) continue
+    const e = m.get(v.user_id) ?? { who: v.profiles, overalls: [], n: 0 }
+    e.n++
+    if (v.overall != null) e.overalls.push(Number(v.overall))
+    m.set(v.user_id, e)
+  }
+  return [...m.entries()]
+    .map(([userId, e]) => ({
+      userId, who: e.who, visits: e.n,
+      average: e.overalls.length ? e.overalls.reduce((a, b) => a + b, 0) / e.overalls.length : 0,
+    }))
+    .sort((a, b) => b.visits - a.visits || (a.who?.display_name ?? '').localeCompare(b.who?.display_name ?? ''))
+}
+
 export type CafeRating = { average: number; count: number }
 
 /**

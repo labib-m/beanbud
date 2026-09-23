@@ -1,7 +1,7 @@
 // Tests what a cafe page shows.  Run: node --test supabase/tests/cafe_info.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { recentLogs, drinkReviews, publicNotes, visitorCount, cafeRating } from '../../app/src/lib/cafeInfo.ts'
+import { recentLogs, drinkReviews, publicNotes, visitorCount, cafeRating, friendsAt } from '../../app/src/lib/cafeInfo.ts'
 
 let n = 0
 const v = (user, date, o = {}) => ({
@@ -81,4 +81,30 @@ test('cafe rating: keeps fractions so the star fill is exact, and rounds only wh
   const r = cafeRating([4, 4, 5])
   assert.ok(Math.abs(r.average - 13 / 3) < 1e-9)
   assert.equal(r.average.toFixed(1), '4.3')
+})
+
+test('friendsAt: excludes me, counts visits, averages each person\'s own overall', () => {
+  const vs = [
+    v('me', '2026-09-01', { overall: 3 }),
+    v('zeba', '2026-09-02', { overall: 3 }),
+    v('zeba', '2026-09-10', { overall: 4 }),
+    v('kakku', '2026-09-05', { overall: 5 }),
+  ]
+  const out = friendsAt(vs, 'me')
+  assert.equal(out.length, 2) // "me" is excluded
+  assert.deepEqual(out.map((f) => f.userId), ['zeba', 'kakku']) // most visits first
+  assert.equal(out[0].visits, 2)
+  assert.ok(Math.abs(out[0].average - 3.5) < 1e-9)
+  assert.equal(out[1].average, 5)
+})
+
+test('friendsAt: an unrated visit still counts toward visits, not toward the average', () => {
+  const vs = [v('zeba', '2026-09-01', { overall: null })]
+  const out = friendsAt(vs, 'me')
+  assert.equal(out[0].visits, 1)
+  assert.equal(out[0].average, 0)
+})
+
+test('friendsAt: nobody but me has visited gives an empty list', () => {
+  assert.deepEqual(friendsAt([v('me', '2026-09-01')], 'me'), [])
 })

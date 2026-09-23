@@ -1,4 +1,4 @@
-import { SCORES, scoreOf, type FullVisit, type ScoreKey } from './types'
+import { SCORES, scoreOf, type FullVisit, type ScoreKey } from './types.ts'
 
 export const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0)
 
@@ -41,28 +41,48 @@ export function criterion(g: CafeGroup, key: ScoreKey): number {
 
 export const criteria = SCORES
 
-export type DrinkStat = { type: string; n: number; avgScore: number; prices: { currency: string; avg: number }[] }
+export type DrinkStat = {
+  type: string; n: number; avgScore: number; prices: { currency: string; avg: number }[]
+  pricedCount: number   // how many of those n times had a price logged — >1 means "avg" is really an average
+  lastDate: string
+  // specv2 §8.2.4: "↑ ৳20 since 18 Aug" — only when the latest priced instance costs more than
+  // the earliest, and both are in the same currency (comparing across currencies would be noise).
+  priceRise: { amount: number; since: string; currency: string } | null
+}
 
 export function drinkStats(g: CafeGroup): DrinkStat[] {
-  const m = new Map<string, { n: number; scores: number[]; byCur: Map<string, number[]> }>()
+  const m = new Map<string, {
+    n: number; scores: number[]; byCur: Map<string, number[]>
+    priced: { date: string; price: number; currency: string }[]; lastDate: string
+  }>()
   for (const v of g.visits) {
     for (const d of v.visit_drinks) {
-      const e = m.get(d.drink_type) ?? { n: 0, scores: [] as number[], byCur: new Map<string, number[]>() }
+      const e = m.get(d.drink_type) ?? { n: 0, scores: [] as number[], byCur: new Map<string, number[]>(), priced: [], lastDate: v.visited_on }
       e.n++
       if (d.score != null) e.scores.push(d.score)
       if (d.price != null && d.price > 0 && v.currency) {
         const arr = e.byCur.get(v.currency) ?? []
         arr.push(Number(d.price))
         e.byCur.set(v.currency, arr)
+        e.priced.push({ date: v.visited_on, price: Number(d.price), currency: v.currency })
       }
+      e.lastDate = v.visited_on   // g.visits is oldest-first, so the last write is the most recent
       m.set(d.drink_type, e)
     }
   }
   return [...m.entries()]
-    .map(([type, e]) => ({
-      type, n: e.n, avgScore: mean(e.scores),
-      prices: [...e.byCur.entries()].map(([currency, p]) => ({ currency, avg: mean(p) })),
-    }))
+    .map(([type, e]) => {
+      const first = e.priced[0], last = e.priced[e.priced.length - 1]
+      const priceRise = first && last && first !== last && first.currency === last.currency && last.price > first.price
+        ? { amount: last.price - first.price, since: first.date, currency: last.currency }
+        : null
+      return {
+        type, n: e.n, avgScore: mean(e.scores),
+        prices: [...e.byCur.entries()].map(([currency, p]) => ({ currency, avg: mean(p) })),
+        pricedCount: e.priced.length,
+        lastDate: e.lastDate, priceRise,
+      }
+    })
     .sort((a, b) => b.n - a.n)
 }
 

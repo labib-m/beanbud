@@ -1,97 +1,165 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ScoreDisc } from '../components/ScoreDisc'
+import { useAuth } from '../auth/AuthProvider'
+import { Avatar } from '../components/Avatar'
 import { Stars } from '../components/Stars'
+import { fetchCafePage } from '../data/cafes'
+import { useLoad } from '../data/useLoad'
 import { useVisits } from '../data/VisitsProvider'
-import { criteria, criterion, drinkStats, fmtDate, groupByCafe, money } from '../lib/stats'
-import { PRICE_BANDS, VERDICTS, currencySymbol, noteOf, scoreOf, type FullVisit } from '../lib/types'
+import { friendsAt, visitorCount } from '../lib/cafeInfo'
+import { displayName } from '../lib/people'
+import { relativeDate } from '../lib/segments'
+import { criteria, criterion, drinkStats, fmtDate, groupByCafe, money, trend, type CafeGroup } from '../lib/stats'
+import { PRICE_BANDS, VERDICTS, currencySymbol, noteOf, scoreOf, type Cafe, type FullVisit } from '../lib/types'
 
-function Sparkline({ points }: { points: number[] }) {
-  const w = 300, h = 54, pad = 4
-  const step = (w - pad * 2) / (points.length - 1)
+const today = () => new Date().toISOString().slice(0, 10)
+
+function Sparkline({ points }: { points: { score: number; date: string }[] }) {
+  const w = 300, h = 44, pad = 4
+  const step = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0
   const y = (s: number) => pad + ((5 - s) / 4) * (h - pad * 2)
-  const pts = points.map((s, i) => `${(pad + i * step).toFixed(1)},${y(s).toFixed(1)}`)
+  const pts = points.map((p, i) => `${(pad + i * step).toFixed(1)},${y(p.score).toFixed(1)}`)
   const last = pts[pts.length - 1].split(',')
   return (
-    <svg className="spark" viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`Overall rating across ${points.length} visits`}>
-      <polyline points={pts.join(' ')} fill="none" stroke="var(--acc)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={last[0]} cy={last[1]} r="4.5" fill="var(--acc)" />
-    </svg>
+    <div className="sparkline-wrap">
+      <svg className="sparkline" viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`Overall rating across ${points.length} visits`}>
+        <polyline points={pts.join(' ')} fill="none" stroke="var(--acc)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={last[0]} cy={last[1]} r="4" fill="var(--acc)" />
+      </svg>
+      <div className="sparkline-dates"><span>{fmtDate(points[0].date)}</span><span>{fmtDate(points[points.length - 1].date)}</span></div>
+    </div>
   )
 }
 
-function VisitRow({ v, open, onToggle, onEdit, currentAddress }: { v: FullVisit; open: boolean; onToggle: () => void; onEdit: () => void; currentAddress: string | null }) {
+function CriteriaBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="criteria-row">
+      <span className="criteria-label">{label}</span>
+      <span className="criteria-track"><span className="criteria-fill" style={{ width: `${(value / 5) * 100}%` }} /></span>
+      <span className="criteria-value">{value ? value.toFixed(1) : '–'}</span>
+    </div>
+  )
+}
+
+function FriendRow({ f }: { f: ReturnType<typeof friendsAt>[number] }) {
+  return (
+    <li className="friend-row">
+      <Avatar id={f.userId} profile={f.who} size={30} />
+      <div className="friend-body">
+        <b>{displayName(f.who)}</b>
+        <span className="muted small">{f.visits} {f.visits === 1 ? 'visit' : 'visits'}</span>
+      </div>
+      <span className="friend-rating"><b>{f.average ? f.average.toFixed(1) : '–'}</b><Stars value={f.average} size={13} /></span>
+    </li>
+  )
+}
+
+function OrderRow({ d, currency }: { d: ReturnType<typeof drinkStats>[number]; currency: string }) {
+  const price = d.prices[0]
+  const sym = currencySymbol(price?.currency ?? currency).trim()
+  return (
+    <li className="order-row">
+      <div className="row-top">
+        <h2 className="row-name">{d.type}</h2>
+        <span className="row-rating"><b>{d.avgScore ? d.avgScore.toFixed(1) : '–'}</b><Stars value={d.avgScore} size={14} /></span>
+      </div>
+      <p className="order-meta">
+        {price ? money(price.avg, sym) + (d.pricedCount > 1 ? ' avg' : '') : '—'}
+        {d.priceRise
+          ? <span className="order-rise"> · ↑ {money(d.priceRise.amount, currencySymbol(d.priceRise.currency).trim())} since {fmtDate(d.priceRise.since)}</span>
+          : <span> · {d.n} {d.n === 1 ? 'time' : 'times'} · last {fmtDate(d.lastDate)}</span>}
+      </p>
+    </li>
+  )
+}
+
+function VisitLogRow({ v, open, onToggle, onEdit }: { v: FullVisit; open: boolean; onToggle: () => void; onEdit: () => void }) {
   const note = noteOf(v)
   const verdict = VERDICTS.find((x) => x.value === v.verdict)?.label
   const sym = v.currency ? currencySymbol(v.currency).trim() : ''
-  // The address this visit was logged under, shown only if the cafe's page has been edited since.
-  const thenAddress = v.cafe_revisions?.address ?? null
-  const addressChanged = !!thenAddress && thenAddress !== (currentAddress ?? '')
   return (
-    <li className="visit-row">
-      <button className="visit-head" aria-expanded={open} onClick={onToggle}>
-        <span className="visit-date">{fmtDate(v.visited_on)}</span>
-        <span className="visit-meta">
-          {v.overall != null && <Stars value={Number(v.overall)} size={12} />}
-          <b>{v.overall != null ? Number(v.overall).toFixed(1) : '–'}</b>
+    <li className="visit-log-row">
+      <button className="visit-log-head" aria-expanded={open} onClick={onToggle}>
+        <span>{fmtDate(v.visited_on)}</span>
+        <span className="row-rating">
+          {v.overall != null && <b>{Number(v.overall).toFixed(1)}</b>}
+          <Stars value={v.overall != null ? Number(v.overall) : 0} size={13} />
+          <span className="caret" aria-hidden="true">{open ? '︿' : '﹀'}</span>
         </span>
       </button>
       {open && (
-        <div className="visit-body">
+        <div className="visit-log-body">
           {criteria.map((c) => {
             const s = scoreOf(v, c.key)
-            return (
-              <div className="crit-row" key={c.key}>
-                <span className="muted">{c.label}</span>
-                <Stars value={s ?? 0} size={12} />
-                <span>{s ?? '–'}</span>
-              </div>
-            )
+            return <div className="criteria-row" key={c.key}><span className="criteria-label">{c.label}</span><span className="muted small">{s ?? '–'}</span></div>
           })}
-          {addressChanged && (
-            <div className="block">
-              <h4>Address when you visited</h4>
-              <p className="note">{thenAddress}</p>
-            </div>
-          )}
           {v.visit_drinks.length > 0 && (
-            <div className="block">
-              <h4>Coffee</h4>
+            <div className="visit-log-drinks">
               {v.visit_drinks.map((d) => (
                 <div className="dline" key={d.id}>
                   <b>{d.drink_type}</b>
-                  <span>{d.price != null && d.price > 0 ? money(Number(d.price), sym) : 'no price'}</span>
-                  {d.score != null && <Stars value={d.score} size={12} fill="var(--sage)" />}
+                  <span className="muted small">{d.price != null && d.price > 0 ? money(Number(d.price), sym) : 'no price'}</span>
                 </div>
               ))}
             </div>
           )}
-          <div className="tags">
-            {verdict && <span className="tag warm">{verdict}</span>}
-            {v.spend && <span className="tag">{v.spend}</span>}
-          </div>
-          {note && (
-            <div className="block">
-              <h4>Your notes <span className="hint">private</span></h4>
-              <p className="note">{note}</p>
+          {(verdict || v.spend) && (
+            <div className="tags">
+              {verdict && <span className="tag warm">{verdict}</span>}
+              {v.spend && <span className="tag">{v.spend}</span>}
             </div>
           )}
-          <button className="btn ghost" onClick={onEdit}>Edit this visit</button>
+          {note && <p className="visit-log-note">{note}</p>}
+          <button className="text-link" onClick={onEdit}>Edit this visit</button>
         </div>
       )}
     </li>
   )
 }
 
+/** The header when this cafe IS in your notebook: your own score, trend and tags. */
+function OwnHeader({ g }: { g: CafeGroup }) {
+  const t = trend(g)
+  const rel = relativeDate(g.lastDate, today())
+  const visitsLine = rel === 'Today' ? 'today' : rel === 'Yesterday' ? 'yesterday' : `last ${rel}`
+  const band = g.latest.price_band ? currencySymbol(g.latest.currency ?? '').trim().repeat(g.latest.price_band) : ''
+  return (
+    <>
+      <p className="cafe-place">{[g.cafe.area, g.cafe.city].filter(Boolean).join(', ')}{band && ` · ${band}`}</p>
+      <p className="cafe-score-line"><b>{g.mean ? g.mean.toFixed(1) : '–'}</b><Stars value={g.mean} size={16} />{g.count} {g.count === 1 ? 'visit' : 'visits'} · {visitsLine}</p>
+      {t !== null && Math.abs(t) > 0.05 && (
+        <p className={`cafe-trend-line ${t > 0 ? 'up' : 'down'}`}>{t > 0 ? '▲' : '▼'} {t > 0 ? 'Up' : 'Down'} {Math.abs(t).toFixed(1)} on your last visit</p>
+      )}
+      {g.goodFor.length > 0 && <div className="tags">{g.goodFor.map((x) => <span className="tag outline" key={x}>{x}</span>)}</div>}
+    </>
+  )
+}
+
+/** The header when friends have visited but you haven't: group average, no trend or tags of your own. */
+function FriendsOnlyHeader({ cafe, average, friends }: { cafe: Cafe; average: number; friends: number }) {
+  return (
+    <>
+      <p className="cafe-place">{[cafe.area, cafe.city].filter(Boolean).join(', ')}</p>
+      <p className="cafe-score-line"><b>{average ? average.toFixed(1) : '–'}</b><Stars value={average} size={16} /></p>
+      <p className="muted small">from {friends} {friends === 1 ? 'friend' : 'friends'} · not in your notebook</p>
+    </>
+  )
+}
+
 export function CafeDetail() {
   const { cafeId } = useParams()
+  const { session } = useAuth()
+  const me = session!.user.id
   const { visits, openLog, openEdit } = useVisits()
   const [openVisit, setOpenVisit] = useState<string | null>(null)
+  const { data: page } = useLoad(() => (cafeId ? fetchCafePage(cafeId) : Promise.resolve(null)), [cafeId])
 
   const group = useMemo(() => groupByCafe(visits ?? []).find((g) => g.cafeId === cafeId), [visits, cafeId])
+  const friends = useMemo(() => (page ? friendsAt(page.visits, me) : []), [page, me])
 
   if (!visits) return <main className="screen"><p className="muted">Loading…</p></main>
-  if (!group) {
+
+  if (!group && !page) {
     return (
       <main className="screen">
         <Link className="back" to="/">← Notebook</Link>
@@ -100,86 +168,75 @@ export function CafeDetail() {
     )
   }
 
-  const { cafe, latest } = group
-  const stats = drinkStats(group)
-  const rated = group.visits.filter((v) => v.overall != null).map((v) => Number(v.overall))
-  const hours = [latest.opens?.slice(0, 5), latest.closes?.slice(0, 5)].filter(Boolean).join(' – ')
-  const band = PRICE_BANDS.find((p) => p.value === latest.price_band)?.label
-  const facts: [string, string][] = ([
-    ['Hours', [hours, latest.hours_note].filter(Boolean).join(' · ')],
-    ['Price', band ?? ''],
-    ['Parking', [latest.parking, latest.parking_note].filter(Boolean).join(' · ')],
-    ['Address', cafe.address ?? ''],
-    ['Neighbourhood', latest.area_note ?? ''],
-  ] as [string, string][]).filter(([, v]) => v)
+  const cafe: Cafe = group ? group.cafe : page!.cafe
+  const stats = group ? drinkStats(group) : []
+  const ratedWithDates = group ? group.visits.filter((v) => v.overall != null).map((v) => ({ score: Number(v.overall), date: v.visited_on })) : []
+  const hours = group ? [group.latest.opens?.slice(0, 5), group.latest.closes?.slice(0, 5)].filter(Boolean).join(' – ') : ''
+  const band = group ? PRICE_BANDS.find((p) => p.value === group.latest.price_band)?.label : undefined
+  const facts: [string, string][] = group
+    ? ([
+        ['Hours', [hours, group.latest.hours_note].filter(Boolean).join(' · ')],
+        ['Price', band ?? ''],
+        ['Parking', [group.latest.parking, group.latest.parking_note].filter(Boolean).join(' · ')],
+        ['Address', cafe.address ?? ''],
+        ['Neighbourhood', group.latest.area_note ?? ''],
+      ] as [string, string][]).filter(([, v]) => v)
+    : ([['Address', cafe.address ?? '']] as [string, string][]).filter(([, v]) => v)
 
   return (
     <main className="screen detail">
-      <header className="detail-head">
-        <Link className="back" to="/">← Notebook</Link>
-        <Link className="back" to={`/cafes/${cafe.id}`}>View the shared cafe page →</Link>
-        <div className="card-top">
-          <div>
-            <h1 className="detail-name">{cafe.name}</h1>
-            <p className="muted">{[cafe.area, cafe.city].filter(Boolean).join(', ')}</p>
-            <p className="muted small">{group.count} {group.count === 1 ? 'visit' : 'visits'}, last {fmtDate(group.lastDate)}</p>
-          </div>
-          <ScoreDisc score={group.mean} size={62} />
-        </div>
+      <Link className="back" to="/">← Notebook</Link>
+      <header className="cafe-header">
+        <h1 className="detail-name">{cafe.name}</h1>
+        {group
+          ? <OwnHeader g={group} />
+          : <FriendsOnlyHeader cafe={cafe} average={page!.rating.average} friends={visitorCount(page!.visits)} />}
       </header>
 
-      <section className="section">
-        <h3>How it rates</h3>
-        {criteria.map((c) => {
-          const n = criterion(group, c.key)
-          return (
-            <div className="crit-row" key={c.key}>
-              <span className="muted">{c.label}</span>
-              <Stars value={n} size={14} fill="var(--sage)" />
-              <span>{n ? n.toFixed(1) : '–'}</span>
-            </div>
-          )
-        })}
-        {rated.length >= 3 && <Sparkline points={rated} />}
-      </section>
+      {group && (
+        <section className="section">
+          <span className="section-label">How it scores</span>
+          {criteria.map((c) => <CriteriaBar key={c.key} label={c.label} value={criterion(group, c.key)} />)}
+          {ratedWithDates.length >= 3 && <Sparkline points={ratedWithDates} />}
+        </section>
+      )}
+
+      {friends.length > 0 && (
+        <section className="section">
+          <span className="section-label">Friends here</span>
+          <ul className="plain-rows friend-rows">{friends.map((f) => <FriendRow key={f.userId} f={f} />)}</ul>
+        </section>
+      )}
 
       {stats.length > 0 && (
         <section className="section">
-          <h3>Coffee, across visits</h3>
-          <ul className="plain">
-            {stats.map((d) => (
-              <li className="dline row" key={d.type}>
-                <b>{d.type}</b>
-                <span className="muted">
-                  {d.prices.length ? d.prices.map((p) => money(p.avg, currencySymbol(p.currency).trim())).join(' / ') : 'no price'} · {d.n}×
-                </span>
-                {d.avgScore > 0 && <Stars value={d.avgScore} size={12} fill="var(--sage)" />}
-              </li>
-            ))}
-          </ul>
+          <span className="section-label">What you order</span>
+          <ul className="plain-rows">{stats.map((d) => <OrderRow key={d.type} d={d} currency={group!.latest.currency ?? ''} />)}</ul>
         </section>
       )}
 
       {(facts.length > 0 || cafe.map_url) && (
         <section className="section">
-          <h3>Good to know</h3>
-          {facts.map(([k, v]) => <div className="fact" key={k}><h4>{k}</h4><p>{v}</p></div>)}
-          {cafe.map_url && <div className="fact"><h4>Map</h4><p><a href={cafe.map_url} target="_blank" rel="noopener noreferrer">Open in maps</a></p></div>}
+          <span className="section-label">Details</span>
+          {facts.map(([k, v]) => (
+            <div className="detail-fact" key={k}><span className="fact-key">{k}</span><span className="fact-value">{v}</span></div>
+          ))}
+          {cafe.map_url && <a className="text-link" href={cafe.map_url} target="_blank" rel="noopener noreferrer">Open in Maps ↗</a>}
         </section>
       )}
 
-      <section className="section">
-        <h3>Visit log</h3>
-        <ul className="plain">
-          {[...group.visits].reverse().map((v) => (
-            <VisitRow key={v.id} v={v} open={openVisit === v.id}
-              onToggle={() => setOpenVisit(openVisit === v.id ? null : v.id)}
-              onEdit={() => openEdit(v)} currentAddress={cafe.address} />
-          ))}
-        </ul>
-      </section>
+      {group && (
+        <section className="section">
+          <span className="section-label">Your visits</span>
+          <ul className="plain-rows">
+            {[...group.visits].reverse().map((v) => (
+              <VisitLogRow key={v.id} v={v} open={openVisit === v.id} onToggle={() => setOpenVisit(openVisit === v.id ? null : v.id)} onEdit={() => openEdit(v)} />
+            ))}
+          </ul>
+        </section>
+      )}
 
-      <button className="btn primary" onClick={() => openLog(cafe)}>Log another visit here</button>
+      <button className="btn primary" onClick={() => openLog(cafe)}>{group ? 'Log another visit here' : 'Log your first visit here'}</button>
     </main>
   )
 }

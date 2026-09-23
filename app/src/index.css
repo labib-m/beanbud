@@ -147,7 +147,7 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 /* ---- cafe detail ---- */
 .detail { padding-top: 0; }
 .detail-head { background: var(--surf); border-radius: 0 0 28px 28px; margin: 0 -20px 18px; padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 12px; }
-.detail-name { font: 400 26px/1.06 var(--display); margin: 0 0 4px; }
+.detail-name { font: 400 32px/1.02 var(--display); margin: 0 0 4px; text-wrap: balance; }
 .back { color: var(--acc); font-weight: 700; font-size: 13.5px; text-decoration: none; }
 .section { margin-bottom: 22px; }
 .section h3 { font: 400 17px/1.1 var(--display); margin: 0 0 11px; }
@@ -357,4 +357,51 @@ textarea.input.area.short { min-height: 70px; }
 .empty-headline { font: 400 26px/1.12 var(--display); color: var(--ink); margin: 0; }
 .empty-sub { font-size: 14.5px; color: var(--mut); max-width: 300px; margin: 0; }
 .one-entry-note { margin: 12px 0 0; font-size: 13px; color: var(--mut); }
-.text-link { font-weight: 600; font-size: 13px; color: var(--accText); text-decoration: none; padding: 6px 0; }
+.text-link { font-weight: 600; font-size: 13px; color: var(--accText); text-decoration: none; padding: 6px 0; background: none; border: 0; cursor: pointer; display: inline-block; }
+
+/* ---- Cafe detail, personal (specv2 §8.2) ---- */
+.cafe-header { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 34px; }
+.cafe-place { margin: 0; font-size: 13px; color: var(--mut); }
+.cafe-score-line { margin: 2px 0 0; display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--mut); }
+.cafe-score-line b { font: 700 24px var(--text); color: var(--accText); margin-right: 4px; }
+.cafe-trend-line { margin: 0; font-weight: 600; font-size: 12.5px; }
+.cafe-trend-line.up { color: var(--accText); }
+.cafe-trend-line.down { color: var(--mut); }
+.tag.outline { background: none; border: 1px solid var(--line2); color: var(--ink); }
+
+.section-label { display: block; font: 700 11px var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--lab); margin: 0 0 11px; }
+
+.criteria-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; }
+.criteria-label { flex: none; width: 76px; font-size: 13.5px; color: var(--ink2); }
+.criteria-track { flex: 1; height: 4px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.criteria-fill { display: block; height: 100%; background: var(--acc); border-radius: 999px; }
+.criteria-value { flex: none; width: 28px; text-align: right; font: 700 13px var(--text); color: var(--mut); }
+
+.sparkline-wrap { margin-top: 10px; }
+.sparkline { width: 100%; height: 44px; display: block; }
+.sparkline-dates { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--fai); }
+
+.friend-rows { display: flex; flex-direction: column; }
+.friend-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.friend-rows .friend-row:last-child { border-bottom: 0; }
+.friend-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.friend-body b { font-weight: 700; font-size: 14px; color: var(--ink); }
+.friend-rating { flex: none; display: inline-flex; align-items: center; gap: 4px; font: 700 14px var(--text); color: var(--ink2); }
+
+.order-row { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.plain-rows .order-row:last-child { border-bottom: 0; }
+.order-meta { margin: 3px 0 0; font-size: 12.5px; color: var(--fai); }
+.order-rise { color: var(--accText); }
+
+.detail-fact { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.section .detail-fact:last-of-type { border-bottom: 0; }
+.fact-key { color: var(--mut); flex: none; }
+.fact-value { color: var(--ink2); text-align: right; }
+
+.visit-log-row { border-bottom: 1px solid var(--line); }
+.plain-rows .visit-log-row:last-child { border-bottom: 0; }
+.visit-log-head { width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: 0; padding: 12px 0; font: 700 14px var(--text); color: var(--ink); cursor: pointer; }
+.caret { margin-left: 4px; font-size: 10px; color: var(--fai); }
+.visit-log-body { padding: 0 0 14px; display: flex; flex-direction: column; gap: 4px; }
+.visit-log-drinks { margin: 6px 0; display: flex; flex-direction: column; gap: 4px; }
+.visit-log-note { margin: 7px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
