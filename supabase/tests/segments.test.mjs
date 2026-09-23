@@ -2,7 +2,7 @@
 // Run:  node --test supabase/tests/segments.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { notebookBucketOf, relativeDate, segmentNotebook } from '../../app/src/lib/segments.ts'
+import { notebookBucketOf, relativeDate, segmentByDay, segmentNotebook } from '../../app/src/lib/segments.ts'
 
 const TODAY = '2026-09-23' // a Wednesday; not otherwise meaningful
 
@@ -79,4 +79,20 @@ test('segmentNotebook: a divider for a previous year carries that year; the curr
   assert.equal(out[1].kind, 'divider')
   assert.equal(out[1].month, 'December')
   assert.equal(out[1].year, 2025)
+})
+
+test('segmentByDay: multiple visits on the same day share one group', () => {
+  const items = [{ date: '2026-09-23' }, { date: '2026-09-23' }, { date: '2026-09-22' }]
+  const out = segmentByDay(items, TODAY, () => ({ visits: 0, cafes: 0 }))
+  assert.equal(out.length, 2)
+  assert.equal(out[0].label, 'Today')
+  assert.equal(out[0].items.length, 2)
+  assert.equal(out[1].label, 'Yesterday')
+})
+
+test('segmentByDay: a month transition still gets a divider, same as Notebook', () => {
+  const items = [{ date: '2026-09-23' }, { date: '2026-08-14' }]
+  const out = segmentByDay(items, TODAY, () => ({ visits: 5, cafes: 2 }))
+  assert.equal(out[1].kind, 'divider')
+  assert.equal(out[1].month, 'August')
 })

@@ -9,10 +9,8 @@ import { useVisits } from '../data/VisitsProvider'
 import { friendsAt, visitorCount } from '../lib/cafeInfo'
 import { displayName } from '../lib/people'
 import { relativeDate } from '../lib/segments'
-import { criteria, criterion, drinkStats, fmtDate, groupByCafe, money, trend, type CafeGroup } from '../lib/stats'
+import { criteria, criterion, drinkStats, fmtDate, groupByCafe, money, todayLocal, trend, type CafeGroup } from '../lib/stats'
 import { PRICE_BANDS, VERDICTS, currencySymbol, noteOf, scoreOf, type Cafe, type FullVisit } from '../lib/types'
-
-const today = () => new Date().toISOString().slice(0, 10)
 
 function Sparkline({ points }: { points: { score: number; date: string }[] }) {
   const w = 300, h = 44, pad = 4
@@ -120,7 +118,7 @@ function VisitLogRow({ v, open, onToggle, onEdit }: { v: FullVisit; open: boolea
 /** The header when this cafe IS in your notebook: your own score, trend and tags. */
 function OwnHeader({ g }: { g: CafeGroup }) {
   const t = trend(g)
-  const rel = relativeDate(g.lastDate, today())
+  const rel = relativeDate(g.lastDate, todayLocal())
   const visitsLine = rel === 'Today' ? 'today' : rel === 'Yesterday' ? 'yesterday' : `last ${rel}`
   const band = g.latest.price_band ? currencySymbol(g.latest.currency ?? '').trim().repeat(g.latest.price_band) : ''
   return (

@@ -3,19 +3,18 @@ import { Link } from 'react-router-dom'
 import { Stars } from '../components/Stars'
 import { useVisits } from '../data/VisitsProvider'
 import { relativeDate, segmentNotebook, type NotebookBlock } from '../lib/segments'
-import { groupByCafe, trend, type CafeGroup } from '../lib/stats'
+import { groupByCafe, todayLocal, trend, type CafeGroup } from '../lib/stats'
 import { currencySymbol, noteOf } from '../lib/types'
 import { FilterBar } from '../components/FilterBar'
 import { emptySelection, matchesCafe, matchesSearch, SORT_TAB_LABEL, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
 import { featuresOf } from '../lib/visitFeatures'
 
 const TABS: Sort[] = ['recent', 'score', 'visits', 'name']
-const today = () => new Date().toISOString().slice(0, 10)
 
 /** Area, City · <relative last visit> · N visits · <price band>, per specv2 §8.1.5. */
 function metaLine(g: CafeGroup): string {
   const place = [g.cafe.area, g.cafe.city].filter(Boolean).join(', ')
-  const parts = [place, relativeDate(g.lastDate, today()), `${g.count} ${g.count === 1 ? 'visit' : 'visits'}`]
+  const parts = [place, relativeDate(g.lastDate, todayLocal()), `${g.count} ${g.count === 1 ? 'visit' : 'visits'}`]
   const band = g.latest.price_band
   if (band) parts.push(currencySymbol(g.latest.currency ?? '').trim().repeat(band))
   return parts.filter(Boolean).join(' · ')
@@ -86,7 +85,7 @@ export function Notebook() {
       }
       return { visits: n, cafes: cafeIds.size }
     }
-    return segmentNotebook(shown, today(), countMonth)
+    return segmentNotebook(shown, todayLocal(), countMonth)
   }, [shown, sort])
 
   if (!visits) return <main className="screen"><p className="muted">Loading…</p></main>

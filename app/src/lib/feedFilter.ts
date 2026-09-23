@@ -48,3 +48,10 @@ export function filterAndSort(rows: FeedRow[], query: FeedQuery): FeedRow[] {
 /** The cities that appear, for the city menu. */
 export const citiesOf = (rows: FeedRow[]): string[] =>
   [...new Set(rows.map((r) => r.city).filter(Boolean))].sort((a, b) => collator.compare(a, b))
+
+/** specv2 §8.4.5: "you agree" within 0.25 of each other, otherwise who rated it higher. */
+export function compareLabel(mine: number, theirs: number): string {
+  const diff = mine - theirs
+  if (Math.abs(diff) < 0.25) return 'you agree'
+  return diff > 0 ? 'you liked it more' : 'they liked it more'
+}

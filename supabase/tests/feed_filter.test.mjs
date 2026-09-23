@@ -1,7 +1,7 @@
 // Tests searching, filtering and sorting everyone's visits.  Run: node --test supabase/tests/feed_filter.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { filterAndSort, citiesOf } from '../../app/src/lib/feedFilter.ts'
+import { filterAndSort, citiesOf, compareLabel } from '../../app/src/lib/feedFilter.ts'
 import { emptySelection, toggleSelected } from '../../app/src/lib/filters.ts'
 
 let n = 0
@@ -103,4 +103,11 @@ test('the input list is never reordered, and cities come out unique and sorted',
   filterAndSort(rows, q({ sort: 'name' }))
   assert.deepEqual(ids(rows), before)
   assert.deepEqual(citiesOf(rows), ['Bangkok', 'Dhaka'])
+})
+
+test('compareLabel: "you agree" within 0.25, otherwise whoever rated it higher', () => {
+  assert.equal(compareLabel(4, 4), 'you agree')
+  assert.equal(compareLabel(4, 3.8), 'you agree')
+  assert.equal(compareLabel(4, 3.5), 'you liked it more')
+  assert.equal(compareLabel(3, 4), 'they liked it more')
 })

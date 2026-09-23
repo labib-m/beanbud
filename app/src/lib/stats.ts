@@ -96,6 +96,14 @@ export function fmtDate(d: string): string {
   return isNaN(dt.getTime()) ? d : dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+/**
+ * Today's date as YYYY-MM-DD, in the viewer's OWN local timezone — the same convention
+ * LogSheet uses when saving visited_on. Never use `new Date().toISOString()` for this: that's
+ * UTC, and in a timezone ahead of UTC it can be "tomorrow" locally while a visit logged today
+ * (locally) already has today's date stored — splitting one real "Today" into two date groups.
+ */
+export const todayLocal = (): string => new Date().toLocaleDateString('en-CA')
+
 export function money(n: number, symbol: string): string {
   const dec = Number.isInteger(n) ? 0 : 2
   return symbol + n.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec })

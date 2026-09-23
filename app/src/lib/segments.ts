@@ -52,27 +52,31 @@ export function notebookBucketOf(lastDate: string, today: string): Bucket {
   return { key: `${y}-${m}`, label, year: y, month: m }
 }
 
-export type NotebookBlock<T> =
+export type DateBlock<T> =
   | { kind: 'group'; key: string; label: string; items: T[] }
   // year is null when it's the current year (specv2's date rules omit it then); the caller
   // decides how to style month vs. year, rather than parsing a pre-joined string.
   | { kind: 'divider'; month: string; year: number | null; visits: number; cafes: number }
 
+/** Kept as an alias: the type used to be Notebook-specific before Feed/profile needed the same shape. */
+export type NotebookBlock<T> = DateBlock<T>
+
 /**
- * Buckets already-sorted-newest-first items into date sections, with a month divider before
- * each section whose month differs from the section before it — never before the first section
- * (specv2 §9.3). `countMonth` supplies each divider's "N visits · N cafés", computed by the
- * caller from the full (not bucket-limited) filtered visit list, per §9.5.
+ * Buckets already-sorted-newest-first items into date sections using `bucketOf`, with a month
+ * divider before each section whose month differs from the section before it — never before the
+ * first section (specv2 §9.3). `countMonth` supplies each divider's "N visits · N cafés",
+ * computed by the caller from the full (not bucket-limited) filtered visit list, per §9.5.
  */
-export function segmentNotebook<T extends { lastDate: string }>(
+function segment<T>(
   items: T[],
   today: string,
+  bucketOf: (item: T) => Bucket,
   countMonth: (year: number, month: number) => { visits: number; cafes: number },
-): NotebookBlock<T>[] {
-  const out: NotebookBlock<T>[] = []
+): DateBlock<T>[] {
+  const out: DateBlock<T>[] = []
   let prevBucket: Bucket | null = null
   for (const item of items) {
-    const b = notebookBucketOf(item.lastDate, today)
+    const b = bucketOf(item)
     if (prevBucket && (b.year !== prevBucket.year || b.month !== prevBucket.month)) {
       const { y: ty } = ymd(today)
       const c = countMonth(b.year, b.month)
@@ -84,4 +88,26 @@ export function segmentNotebook<T extends { lastDate: string }>(
     prevBucket = b
   }
   return out
+}
+
+/** Notebook, sorted "Most recent" (specv2 §9.2): Today/Yesterday/This week/Earlier in <month>/<Month>. */
+export function segmentNotebook<T extends { lastDate: string }>(
+  items: T[], today: string, countMonth: (year: number, month: number) => { visits: number; cafes: number },
+): DateBlock<T>[] {
+  return segment(items, today, (item) => notebookBucketOf(item.lastDate, today), countMonth)
+}
+
+/**
+ * Feed Activity and profile "Recently visited", sorted by most recent (specv2 §9.2): one group
+ * per calendar day (Today, Yesterday, "18 Sep", ...); several visits on the same day share a group.
+ */
+export function dayBucketOf(date: string, today: string): Bucket {
+  const { y, m } = ymd(date)
+  return { key: date, label: relativeDate(date, today), year: y, month: m }
+}
+
+export function segmentByDay<T extends { date: string }>(
+  items: T[], today: string, countMonth: (year: number, month: number) => { visits: number; cafes: number },
+): DateBlock<T>[] {
+  return segment(items, today, (item) => dayBucketOf(item.date, today), countMonth)
 }
