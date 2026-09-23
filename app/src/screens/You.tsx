@@ -4,6 +4,7 @@ import { Avatar } from '../components/Avatar'
 import { RecentSections } from '../components/RecentSections'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { NotificationsToggle } from '../components/NotificationsToggle'
+import { deleteAccount } from '../data/auth'
 import { fetchLiteVisits, fetchProfiles, updateProfile, type ProfileEdit } from '../data/social'
 import { useLoad } from '../data/useLoad'
 import { SetPin } from './SetPin'
@@ -76,6 +77,9 @@ function ProfileForm({ initial, onCancel, onSaved }: { initial: ReturnType<typeo
   const [avatar, setAvatar] = useState<string | null>(initial.avatar)
   const [err, setErr] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteErr, setDeleteErr] = useState('')
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
 
   async function submit(e: FormEvent) {
@@ -95,6 +99,15 @@ function ProfileForm({ initial, onCancel, onSaved }: { initial: ReturnType<typeo
       setErr(x instanceof Error ? x.message : 'Could not save.')
       setSaving(false)
     }
+  }
+
+  async function removeAccount() {
+    if (!confirmDelete) { setConfirmDelete(true); return }
+    setDeleteErr('')
+    setDeleting(true)
+    const r = await deleteAccount()
+    if (!r.ok) { setDeleteErr(r.message); setConfirmDelete(false); setDeleting(false) }
+    // on success the app signs out and switches screens by itself
   }
 
   return (
@@ -118,6 +131,22 @@ function ProfileForm({ initial, onCancel, onSaved }: { initial: ReturnType<typeo
       <div className="row-btns">
         <button className="btn primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</button>
         <button className="btn ghost" type="button" onClick={onCancel}>Cancel</button>
+      </div>
+
+      <div className="danger-zone">
+        <p className="muted small">
+          Deleting your account permanently removes your profile, every visit and drink you've logged, and your notes.
+          This can't be undone.
+        </p>
+        {deleteErr && <p className="error small" role="alert">{deleteErr}</p>}
+        <button
+          type="button"
+          className={`btn danger wide${confirmDelete ? ' armed' : ''}`}
+          onClick={removeAccount}
+          disabled={saving || deleting}
+        >
+          {deleting ? 'Deleting…' : confirmDelete ? 'Tap again to permanently delete your account' : 'Delete my account'}
+        </button>
       </div>
     </form>
   )

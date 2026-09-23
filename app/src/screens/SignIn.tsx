@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { PinInput } from '../components/PinInput'
 import { PIN_LENGTH, signInWithPin, signUp, takeFlash } from '../data/auth'
 import { NEW_SIGNUP_KEY } from '../lib/addToHomeScreen'
+import { NEW_USER_NOTIF_KEY } from '../lib/notifBanner'
 
 type Mode = 'signin' | 'create'
 const USERNAME_RULE = /^[A-Za-z0-9_.-]{2,24}$/
@@ -38,7 +39,10 @@ export function SignIn() {
     if (!r.ok) { setError(r.message); setPin(''); setAgain(''); setBusy(false); return }
     // on success the app switches screens by itself
     if (mode === 'create') {
-      try { localStorage.setItem(NEW_SIGNUP_KEY, '1') } catch { /* the Home Screen guide just won't show; not worth failing over */ }
+      try {
+        localStorage.setItem(NEW_SIGNUP_KEY, '1')
+        localStorage.setItem(NEW_USER_NOTIF_KEY, '1')
+      } catch { /* the Home Screen guide / notifications banner just won't show; not worth failing over */ }
     }
   }
 

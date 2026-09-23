@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Outlet, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthProvider'
 import { AddToHomeScreenGuide } from './components/AddToHomeScreenGuide'
+import { NotificationsBanner } from './components/NotificationsBanner'
 import { TabBar } from './components/TabBar'
 import { VisitsProvider } from './data/VisitsProvider'
 import { fetchMyProfile } from './data/social'
@@ -56,6 +57,7 @@ function Shell() {
     <>
       <Outlet />
       <TabBar />
+      <NotificationsBanner />
       <AddToHomeScreenGuide />
     </>
   )

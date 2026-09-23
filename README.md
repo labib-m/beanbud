@@ -153,12 +153,15 @@ It prints a **Public Key** and a **Private Key**. The public one is fine to shar
 
 **6. Turn it on**, on the You screen. Each device (each phone, each home-screen icon) is its own subscription.
 
+**New accounts also get a floating reminder.** Right after signing up, a banner (`app/src/components/NotificationsBanner.tsx`) floats above the tab bar on every screen, saying to turn notifications on. It stays until they actually do — it isn't dismissible — and it can reappear later too: it hides itself where push isn't possible yet (for example a plain Safari tab on iOS, before the person has added the Home Screen icon), and comes back once it is. Never shown to an existing person signing in. The logic is pure and tested in `app/src/lib/notifBanner.ts` / `supabase/tests/notif_banner.test.mjs`.
+
 ## How access works
 
 - Everyone signed in can read cafes, visits, drinks and profiles.
 - You can only create, edit or delete your own visits and drinks, and your own profile.
 - Notes live in a separate table and only their owner can read them.
 - Blocked updates and deletes change zero rows without raising an error, so the app checks how many rows changed.
+- **Deleting your account** (You → Edit profile → Delete my account, at the bottom) is permanent. It removes your Supabase Auth login, which the database cascades from there on its own: your profile, every visit, drink, private and public note, and any push subscriptions all go with it. Cafes you added stay in the shared directory (only your name is cleared from them), since cafes belong to everyone, not to whoever first logged them.
 
 ## Deploy
 

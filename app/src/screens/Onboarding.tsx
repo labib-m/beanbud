@@ -84,7 +84,7 @@ export function Onboarding({ profile, onDone, onSignOut }: { profile: Profile; o
 
         <label className="field-label" htmlFor="ob-name">Display name</label>
         <input id="ob-name" className="input" maxLength={60} autoComplete="name" value={displayName}
-          placeholder="Nabila Haque" onChange={(e) => setDisplayName(e.target.value)} />
+          placeholder="What should people brew you by?" onChange={(e) => setDisplayName(e.target.value)} />
 
         <label className="field-label" htmlFor="ob-handle">Username</label>
         <input id="ob-handle" className="input" maxLength={25} autoCapitalize="none" autoCorrect="off" spellCheck={false}

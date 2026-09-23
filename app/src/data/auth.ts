@@ -114,3 +114,36 @@ export async function savePin(pin: string): Promise<Result> {
   await signOutWithMessage('Your PIN is saved. Please sign in with it.')
   return { ok: true }
 }
+
+const callDeleteAccount = () =>
+  supabase.functions.invoke('pin-auth', { body: { action: 'delete-account' }, timeout: 20000 })
+
+/**
+ * Permanently deletes the signed-in person's account. Everything tied to it goes too — profile,
+ * visits, drinks, private and public notes, push subscriptions — the database cascades this on
+ * its own (see supabase/functions/pin-auth/index.ts). Cannot be undone. On success this also
+ * signs the browser out, since the account it was signed into no longer exists.
+ */
+export async function deleteAccount(): Promise<Result> {
+  let { data, error } = await callDeleteAccount()
+
+  if (error instanceof FunctionsHttpError && error.context.status === 401) {
+    const refreshed = await withTimeout(supabase.auth.refreshSession(), 8000)
+    if (refreshed !== 'timeout' && !refreshed.error) {
+      ;({ data, error } = await callDeleteAccount())
+    } else {
+      return { ok: false, message: 'Your sign-in expired. Go back to sign in, sign in again, and retry.' }
+    }
+  }
+
+  if (error) {
+    const status = error instanceof FunctionsHttpError ? error.context.status : null
+    if (status === 401) return { ok: false, message: "We couldn't verify your session. Go back to sign in, sign in again, and retry." }
+    if (!status) return { ok: false, message: 'The server took too long to answer. Check your connection and try again.' }
+    return { ok: false, message: `Couldn't delete your account (error ${status}). Try again in a moment.` }
+  }
+  if (!data?.ok) return { ok: false, message: "Couldn't delete your account. Try again in a moment." }
+
+  await signOutWithMessage('Your account has been deleted.')
+  return { ok: true }
+}

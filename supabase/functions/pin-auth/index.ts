@@ -1,8 +1,9 @@
-// Bean Bud — username + PIN accounts (one Edge Function, four actions).
+// Bean Bud — username + PIN accounts (one Edge Function, five actions).
 //
 //   sign-up         { username, pin, invite }        create an account, return a session
 //   sign-in         { username, pin }                check the PIN, return a session
 //   set-pin         { pin }                          (signed in) set or change your own PIN
+//   delete-account  {}                                (signed in) permanently delete your own account
 //   admin-reset-pin { admin_key, username|email, pin }  (developer) give someone a temporary PIN
 //
 // There is NO email anywhere. Supabase Auth insists every account has an
@@ -285,6 +286,26 @@ async function setPin(req: Request, body: Record<string, unknown>): Promise<Resp
   return json({ ok: true, access_token: fresh?.access_token ?? null, refresh_token: fresh?.refresh_token ?? null })
 }
 
+// ------------------------------------------------------- delete-account
+// Deletes the Supabase Auth user. Every table that hangs off it does so with "on delete
+// cascade" (profiles, visits, visit_drinks, visit_notes, push_subscriptions) or "on delete
+// set null" (cafes.created_by, cafe_revisions.changed_by) already, in the schema itself — so
+// this one call is enough; nothing here needs to delete rows table by table.
+async function deleteAccount(req: Request): Promise<Response> {
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
+  const { admin } = clients()
+  const { data: who, error: whoError } = await admin.auth.getUser(token)
+  if (whoError || !who?.user) {
+    const detail = describeToken(token)
+    console.error('delete-account: could not verify the caller:', whoError?.message ?? 'no user returned', '|', detail)
+    return json({ ok: false, reason: 'session', detail }, 401)
+  }
+
+  const { error } = await admin.auth.admin.deleteUser(who.user.id)
+  if (error) { console.error('deleteUser failed', error.message); return json({ ok: false }, 500) }
+  return json({ ok: true })
+}
+
 // ------------------------------------------------------- admin-reset-pin
 async function adminResetPin(body: Record<string, unknown>): Promise<Response> {
   const pepper = needPepper()
@@ -332,6 +353,7 @@ async function handle(req: Request): Promise<Response> {
     if (body?.action === 'sign-in') return await signIn(body)
     if (body?.action === 'sign-up') return await signUp(body)
     if (body?.action === 'set-pin') return await setPin(req, body)
+    if (body?.action === 'delete-account') return await deleteAccount(req)
     if (body?.action === 'admin-reset-pin') return await adminResetPin(body)
     return json({ ok: false }, 400)
   } catch (e) {
