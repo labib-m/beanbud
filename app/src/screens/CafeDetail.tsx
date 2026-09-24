@@ -121,15 +121,13 @@ function OwnHeader({ g }: { g: CafeGroup }) {
   const t = trend(g)
   const rel = relativeDate(g.lastDate, todayLocal())
   const visitsLine = rel === 'Today' ? 'today' : rel === 'Yesterday' ? 'yesterday' : `last ${rel}`
-  const band = g.latest.price_band ? currencySymbol(g.latest.currency ?? '').trim().repeat(g.latest.price_band) : ''
   return (
     <>
-      <p className="cafe-place">{[g.cafe.area, g.cafe.city].filter(Boolean).join(', ')}{band && ` · ${band}`}</p>
+      <p className="cafe-place">{[g.cafe.area, g.cafe.city].filter(Boolean).join(', ')}</p>
       <p className="cafe-score-line"><b>{g.mean ? g.mean.toFixed(1) : '–'}</b><Stars value={g.mean} size={16} />{g.count} {g.count === 1 ? 'visit' : 'visits'} · {visitsLine}</p>
       {t !== null && Math.abs(t) > 0.05 && (
         <p className={`cafe-trend-line ${t > 0 ? 'up' : 'down'}`}>{t > 0 ? '▲' : '▼'} {t > 0 ? 'Up' : 'Down'} {Math.abs(t).toFixed(1)} on your last visit</p>
       )}
-      {g.goodFor.length > 0 && <div className="tags">{g.goodFor.map((x) => <span className="tag outline" key={x}>{x}</span>)}</div>}
     </>
   )
 }
@@ -173,15 +171,15 @@ export function CafeDetail() {
   const ratedWithDates = group ? group.visits.filter((v) => v.overall != null).map((v) => ({ score: Number(v.overall), date: v.visited_on })) : []
   const hours = group ? [group.latest.opens?.slice(0, 5), group.latest.closes?.slice(0, 5)].filter(Boolean).join(' – ') : ''
   const band = group ? PRICE_BANDS.find((p) => p.value === group.latest.price_band)?.label : undefined
-  const facts: [string, string][] = group
+  const address = cafe.address ?? ''
+  const otherFacts: [string, string][] = group
     ? ([
         ['Hours', [hours, group.latest.hours_note].filter(Boolean).join(' · ')],
         ['Price', band ?? ''],
         ['Parking', [group.latest.parking, group.latest.parking_note].filter(Boolean).join(' · ')],
-        ['Address', cafe.address ?? ''],
         ['Neighbourhood', group.latest.area_note ?? ''],
       ] as [string, string][]).filter(([, v]) => v)
-    : ([['Address', cafe.address ?? '']] as [string, string][]).filter(([, v]) => v)
+    : []
 
   return (
     <main className="screen detail">
@@ -195,13 +193,13 @@ export function CafeDetail() {
 
       {group && (
         <section className="section">
-          <span className="section-label">How it scores</span>
+          <span className="section-label">How you roasted it</span>
           {criteria.map((c) => <CriteriaBar key={c.key} label={c.label} value={criterion(group, c.key)} />)}
           {ratedWithDates.length >= 3 && <Sparkline points={ratedWithDates} />}
         </section>
       )}
 
-      {friends.length > 0 && (
+      {!group && friends.length > 0 && (
         <section className="section">
           <span className="section-label">Friends here</span>
           <ul className="plain-rows friend-rows">{friends.map((f) => <FriendRow key={f.userId} f={f} />)}</ul>
@@ -210,20 +208,22 @@ export function CafeDetail() {
 
       {stats.length > 0 && (
         <section className="section">
-          <span className="section-label">What you order</span>
+          <span className="section-label">What you brewed</span>
           <ul className="plain-rows">{stats.map((d) => <OrderRow key={d.type} d={d} currency={group!.latest.currency ?? ''} />)}</ul>
         </section>
       )}
 
-      {(facts.length > 0 || cafe.map_url) && (
-        <section className="section">
-          <span className="section-label">Details</span>
-          {facts.map(([k, v]) => (
-            <div className="detail-fact" key={k}><span className="fact-key">{k}</span><span className="fact-value">{v}</span></div>
-          ))}
+      <section className="section">
+        <span className="section-label">Details</span>
+        <div className="detail-fact"><span className="fact-key">Address</span><span className="fact-value">{address || 'No address yet'}</span></div>
+        <div className="detail-links">
           {cafe.map_url && <a className="text-link" href={cafe.map_url} target="_blank" rel="noopener noreferrer">Open in Maps ↗</a>}
-        </section>
-      )}
+          <Link className="text-link" to={`/cafes/${cafe.id}`}>Cafe page →</Link>
+        </div>
+        {otherFacts.map(([k, v]) => (
+          <div className="detail-fact" key={k}><span className="fact-key">{k}</span><span className="fact-value">{v}</span></div>
+        ))}
+      </section>
 
       {group && (
         <section className="section">
