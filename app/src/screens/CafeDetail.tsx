@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
 import { BookmarkButton } from '../components/BookmarkButton'
+import { CriteriaBar } from '../components/CriteriaBar'
 import { PersonLink } from '../components/PersonLink'
 import { Stars } from '../components/Stars'
 import { fetchCafePage } from '../data/cafes'
@@ -26,16 +27,6 @@ function Sparkline({ points }: { points: { score: number; date: string }[] }) {
         <circle cx={last[0]} cy={last[1]} r="4" fill="var(--acc)" />
       </svg>
       <div className="sparkline-dates"><span>{fmtDate(points[0].date)}</span><span>{fmtDate(points[points.length - 1].date)}</span></div>
-    </div>
-  )
-}
-
-function CriteriaBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="criteria-row">
-      <span className="criteria-label">{label}</span>
-      <span className="criteria-track"><span className="criteria-fill" style={{ width: `${(value / 5) * 100}%` }} /></span>
-      <span className="criteria-value">{value ? value.toFixed(1) : '–'}</span>
     </div>
   )
 }

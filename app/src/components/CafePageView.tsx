@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import type { CafeRecord } from '../data/cafes'
-import { drinkReviews, publicNotes, recentLogs, visitorCount, type CafeRating, type CafeVisit } from '../lib/cafeInfo'
+import { publicNotes, recentDrinkEntries, visitorCount, type CafeRating, type CafeVisit, type CriterionAverage } from '../lib/cafeInfo'
 import { describeRevision, type Revision } from '../lib/history'
-import { fmtDate } from '../lib/stats'
-import { Avatar } from './Avatar'
+import { fmtDate, money } from '../lib/stats'
+import { SCORES, currencySymbol } from '../lib/types'
 import { BookmarkButton } from './BookmarkButton'
+import { CriteriaBar } from './CriteriaBar'
 import { PersonLink } from './PersonLink'
 import { VisitLog } from './VisitLog'
 import { Stars } from './Stars'
@@ -14,6 +15,7 @@ type Props = {
   visits: CafeVisit[]
   revisions: Revision[]
   rating: CafeRating        // the overall average across every rated visit by everyone
+  criteria: CriterionAverage[]   // the same, per rating category
   myVisitCount: number      // how many visits YOU have logged here
   onEdit: () => void
 }
@@ -22,9 +24,8 @@ const stamp = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 /** The public page of one cafe. Display only; the screen around it loads the data. */
-export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, onEdit }: Props) {
-  const logs = recentLogs(visits)
-  const reviews = drinkReviews(visits)
+export function CafePageView({ cafe, visits, revisions, rating, criteria, myVisitCount, onEdit }: Props) {
+  const brews = recentDrinkEntries(visits)
   const notes = publicNotes(visits)
   const people = visitorCount(visits)
 
@@ -53,44 +54,34 @@ export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, on
       </section>
 
       <section className="section">
-        <span className="section-label">Recent logs</span>
-        {logs.length === 0 ? <p className="muted">No visits logged yet.</p> : (
-          <ul className="plain-rows">
-            {logs.map((v) => {
-              const drinks = [...v.visit_drinks].sort((a, b) => a.sort_order - b.sort_order).map((d) => d.drink_type)
-              return (
-                <li key={v.id}>
-                  <div className="plain-row">
-                    <div className="feed-who">
-                      <Avatar id={v.user_id} profile={v.profiles} size={30} />
-                      <span className="feed-who-text"><PersonLink id={v.user_id} profile={v.profiles} handle /> <span className="muted small">· {fmtDate(v.visited_on)}</span></span>
-                      {v.overall != null && Number(v.overall) > 0 && <span className="row-rating"><b>{Number(v.overall).toFixed(1)}</b><Stars value={Number(v.overall)} size={13} /></span>}
-                    </div>
-                    {drinks.length > 0 && <p className="row-meta">{drinks.join(', ')}</p>}
-                    <VisitLog v={v} />
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
+        <span className="section-label">What people roast here</span>
+        {criteria.every((c) => c.count === 0) ? <p className="muted">Nobody has rated it yet.</p> : (
+          SCORES.map((sc) => <CriteriaBar key={sc.key} label={sc.label} value={criteria.find((c) => c.key === sc.key)?.average ?? 0} />)
         )}
       </section>
 
       <section className="section">
-        <span className="section-label">Recent ratings</span>
-        {reviews.length === 0 ? <p className="muted">No ratings yet.</p> : (
+        <span className="section-label">Recent brews here</span>
+        {brews.length === 0 ? <p className="muted">No brews logged yet.</p> : (
           <ul className="plain-rows">
-            {reviews.map((d, i) => (
-              <li key={i + d.drink + d.visitedOn}>
-                <div className="plain-row">
-                  <div className="row-top">
-                    <h2 className="row-name">{d.drink}</h2>
-                    <span className="row-rating"><b>{d.score.toFixed(1)}</b><Stars value={d.score} size={14} /></span>
+            {brews.map((b, i) => {
+              const sym = b.currency ? currencySymbol(b.currency).trim() : ''
+              return (
+                <li key={b.visit.id + b.drink + i}>
+                  <div className="plain-row">
+                    <div className="row-top">
+                      <h2 className="row-name">{b.drink}</h2>
+                      <span className="row-rating">
+                        {b.price != null && b.price > 0 && <span className="muted small">{money(b.price, sym)}</span>}
+                        {b.score != null && <><b>{b.score.toFixed(1)}</b><Stars value={b.score} size={14} /></>}
+                      </span>
+                    </div>
+                    <p className="row-meta"><PersonLink id={b.userId} profile={b.who} handle /> · {fmtDate(b.visitedOn)}</p>
+                    <VisitLog v={b.visit} />
                   </div>
-                  <p className="row-meta"><PersonLink id={d.userId} profile={d.who} /> · {fmtDate(d.visitedOn)}</p>
-                </div>
-              </li>
-            ))}
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>

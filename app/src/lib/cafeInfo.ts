@@ -1,7 +1,7 @@
 // What a cafe's public page shows, worked out from the visits people have logged there.
 // Pure; the only import is a type (tested in supabase/tests/cafe_info.test.mjs).
 
-import type { VisitDetail } from './types.ts'
+import type { ScoreKey, VisitDetail } from './types.ts'
 
 export type CafeVisit = VisitDetail & {
   profiles: { display_name: string | null; handle: string | null; avatar?: string | null } | null
@@ -13,20 +13,26 @@ export function newestFirst(visits: CafeVisit[]): CafeVisit[] {
   return [...visits].sort((a, b) => b.visited_on.localeCompare(a.visited_on) || b.created_at.localeCompare(a.created_at))
 }
 
-/** The latest visits by anyone. */
-export function recentLogs(visits: CafeVisit[], n = 5): CafeVisit[] {
-  return newestFirst(visits).slice(0, n)
+export type DrinkEntry = {
+  drink: string
+  price: number | null
+  score: number | null
+  currency: string | null
+  userId: string
+  who: Who
+  visitedOn: string
+  visit: CafeVisit   // the whole visit it belongs to, for its details
 }
 
-export type DrinkReview = { drink: string; score: number; userId: string; who: Who; visitedOn: string }
-
-/** The latest drinks that someone actually rated (an unrated drink is not a review). */
-export function drinkReviews(visits: CafeVisit[], n = 5): DrinkReview[] {
-  const out: DrinkReview[] = []
+/** The latest `n` drinks anyone had here, newest visit first, in the order listed within a visit. */
+export function recentDrinkEntries(visits: CafeVisit[], n = 5): DrinkEntry[] {
+  const out: DrinkEntry[] = []
   for (const v of newestFirst(visits)) {
     for (const d of [...v.visit_drinks].sort((a, b) => a.sort_order - b.sort_order)) {
-      if (d.score == null) continue
-      out.push({ drink: d.drink_type, score: d.score, userId: v.user_id, who: v.profiles, visitedOn: v.visited_on })
+      out.push({
+        drink: d.drink_type, price: d.price == null ? null : Number(d.price), score: d.score, currency: v.currency,
+        userId: v.user_id, who: v.profiles, visitedOn: v.visited_on, visit: v,
+      })
       if (out.length === n) return out
     }
   }
@@ -84,4 +90,20 @@ export function cafeRating(overalls: (number | string | null | undefined)[]): Ca
   const rated = overalls.map(Number).filter((n) => Number.isFinite(n) && n > 0)
   if (!rated.length) return { average: 0, count: 0 }
   return { average: rated.reduce((a, b) => a + b, 0) / rated.length, count: rated.length }
+}
+
+export type CriterionAverage = { key: ScoreKey; average: number; count: number }
+type ScoreRow = Partial<Record<`score_${ScoreKey}`, number | string | null>>
+
+const CRITERIA: ScoreKey[] = ['ambiance', 'drinks', 'food', 'service', 'crowd']
+
+/**
+ * The average of each rating category across everyone's visits to a cafe. A category nobody
+ * rated is left out of its own average (count 0, average 0), so it neither helps nor hurts.
+ */
+export function criteriaAverages(rows: ScoreRow[]): CriterionAverage[] {
+  return CRITERIA.map((key) => {
+    const rated = rows.map((r) => Number(r[`score_${key}`])).filter((n) => Number.isFinite(n) && n > 0)
+    return { key, average: rated.length ? rated.reduce((a, b) => a + b, 0) / rated.length : 0, count: rated.length }
+  })
 }

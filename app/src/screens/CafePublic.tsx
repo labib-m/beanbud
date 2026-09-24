@@ -23,7 +23,7 @@ export function CafePublic() {
   return (
     <>
       <CafePageView
-        cafe={data.cafe} visits={data.visits} revisions={data.revisions} rating={data.rating}
+        cafe={data.cafe} visits={data.visits} revisions={data.revisions} rating={data.rating} criteria={data.criteria}
         myVisitCount={myVisitCount} onEdit={() => setEditing(true)}
       />
       {editing && <EditCafeSheet cafe={data.cafe} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); setTick((t) => t + 1) }} />}

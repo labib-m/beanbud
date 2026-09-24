@@ -1,35 +1,50 @@
 // Tests what a cafe page shows.  Run: node --test supabase/tests/cafe_info.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { recentLogs, drinkReviews, publicNotes, visitorCount, cafeRating, friendsAt } from '../../app/src/lib/cafeInfo.ts'
+import { recentDrinkEntries, criteriaAverages, publicNotes, visitorCount, cafeRating, friendsAt } from '../../app/src/lib/cafeInfo.ts'
 
 let n = 0
 const v = (user, date, o = {}) => ({
   id: 'v' + ++n, user_id: user, visited_on: date, created_at: date + 'T10:00:00Z', overall: null, public_note: null,
   profiles: { display_name: user, handle: user, avatar: null }, visit_drinks: [], ...o,
 })
-const dr = (t, s, i = 0) => ({ drink_type: t, score: s, sort_order: i })
+const dr = (t, s, i = 0, price = null) => ({ drink_type: t, score: s, sort_order: i, price })
 
-test('recent logs: newest first, limited', () => {
-  const vs = [v('a', '2026-09-01'), v('b', '2026-09-09'), v('a', '2026-09-05'), v('c', '2026-08-01')]
-  assert.deepEqual(recentLogs(vs, 3).map((x) => x.visited_on), ['2026-09-09', '2026-09-05', '2026-09-01'])
-  assert.deepEqual(recentLogs([]), [])
-})
-
-test('drink reviews: only RATED drinks, newest first, in listed order', () => {
+test('recent drink entries: newest visit first, every drink (rated or not), in listed order, limited', () => {
   const vs = [
-    v('a', '2026-09-01', { visit_drinks: [dr('Espresso', 3)] }),
-    v('b', '2026-09-10', { visit_drinks: [dr('Latte', null, 0), dr('Cortado', 5, 1), dr('Mocha', 4, 2)] }),
+    v('a', '2026-09-01', { visit_drinks: [dr('Espresso', 3, 0, 150)] }),
+    v('b', '2026-09-10', { currency: 'BDT', visit_drinks: [dr('Mocha', 4, 2), dr('Latte', null, 0, 280), dr('Cortado', 5, 1)] }),
   ]
-  const r = drinkReviews(vs)
-  assert.deepEqual(r.map((x) => x.drink), ['Cortado', 'Mocha', 'Espresso'])   // unrated Latte is skipped
+  const r = recentDrinkEntries(vs)
+  assert.deepEqual(r.map((x) => x.drink), ['Latte', 'Cortado', 'Mocha', 'Espresso'])
+  assert.equal(r[0].price, 280)
+  assert.equal(r[0].score, null)
+  assert.equal(r[0].currency, 'BDT')
   assert.equal(r[0].userId, 'b')
-  assert.equal(drinkReviews(vs, 2).length, 2)
+  assert.equal(r[0].visit.id, vs[1].id)
+  assert.equal(recentDrinkEntries(vs, 2).length, 2)
+  assert.deepEqual(recentDrinkEntries([]), [])
 })
 
-test('drink reviews: sort_order decides order inside a visit', () => {
-  const vs = [v('a', '2026-09-10', { visit_drinks: [dr('Second', 4, 1), dr('First', 5, 0)] })]
-  assert.deepEqual(drinkReviews(vs).map((x) => x.drink), ['First', 'Second'])
+test('recent drink entries: a visit with no drinks adds nothing, and the default limit is 5', () => {
+  const vs = [v('a', '2026-09-09'), v('b', '2026-09-01', { visit_drinks: ['1', '2', '3', '4', '5', '6'].map((t, i) => dr(t, null, i)) })]
+  assert.equal(recentDrinkEntries(vs).length, 5)
+})
+
+test('criteria averages: per category over everyone, unrated categories left out of their own average', () => {
+  const rows = [
+    { score_ambiance: 5, score_drinks: 4, score_food: null, score_service: 3, score_crowd: '2' },
+    { score_ambiance: 3, score_drinks: null, score_food: null, score_service: 4, score_crowd: null },
+  ]
+  const r = Object.fromEntries(criteriaAverages(rows).map((c) => [c.key, c]))
+  assert.equal(r.ambiance.average, 4)
+  assert.equal(r.drinks.average, 4)
+  assert.equal(r.drinks.count, 1)
+  assert.equal(r.food.average, 0)
+  assert.equal(r.food.count, 0)
+  assert.equal(r.service.average, 3.5)
+  assert.equal(r.crowd.average, 2)
+  assert.deepEqual(criteriaAverages([]).map((c) => c.count), [0, 0, 0, 0, 0])
 })
 
 test('public notes: only shared, non-blank notes; trimmed; newest first', () => {
@@ -48,7 +63,7 @@ test('visitor count is distinct people, and inputs are never reordered', () => {
   const vs = [v('a', '2026-09-01'), v('a', '2026-09-02'), v('b', '2026-09-03')]
   assert.equal(visitorCount(vs), 2)
   const before = vs.map((x) => x.id)
-  recentLogs(vs); drinkReviews(vs); publicNotes(vs)
+  recentDrinkEntries(vs); publicNotes(vs)
   assert.deepEqual(vs.map((x) => x.id), before)
 })
 
