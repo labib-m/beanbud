@@ -36,24 +36,26 @@ export function Directory() {
 
   return (
     <>
-      <div className="search-field">
-        <span className="search-icon" aria-hidden="true">⌕</span>
-        <input className="search-input" type="search" placeholder="Search every cafe" aria-label="Search the directory" value={query} onChange={(e) => setQuery(e.target.value)} />
-        {query && <button type="button" className="search-clear" onClick={() => setQuery('')}>Clear</button>}
-      </div>
-      <div className="filter-row">
-        <span className="filter-pill-wrap">
-          <select className="filter-pill" aria-label="City" value={city} onChange={(e) => pickCity(e.target.value)}>
-            <option value="">All cities</option>
-            {cities.map((c) => <option key={c}>{c}</option>)}
-          </select>
-        </span>
-        <span className="filter-pill-wrap">
-          <select className="filter-pill" aria-label="Neighbourhood" value={area} onChange={(e) => setArea(e.target.value)}>
-            <option value="">All neighbourhoods</option>
-            {areas.map((a) => <option key={a}>{a}</option>)}
-          </select>
-        </span>
+      <div className="controls">
+        <div className="search-field">
+          <span className="search-icon" aria-hidden="true">⌕</span>
+          <input className="search-input" type="search" placeholder="Search every cafe" aria-label="Search the directory" value={query} onChange={(e) => setQuery(e.target.value)} />
+          {query && <button type="button" className="search-clear" onClick={() => setQuery('')}>Clear</button>}
+        </div>
+        <div className="filter-row">
+          <span className="filter-pill-wrap">
+            <select className="filter-pill" aria-label="City" value={city} onChange={(e) => pickCity(e.target.value)}>
+              <option value="">All cities</option>
+              {cities.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          </span>
+          <span className="filter-pill-wrap">
+            <select className="filter-pill" aria-label="Neighbourhood" value={area} onChange={(e) => setArea(e.target.value)}>
+              <option value="">All neighbourhoods</option>
+              {areas.map((a) => <option key={a}>{a}</option>)}
+            </select>
+          </span>
+        </div>
       </div>
 
       <p className="result-count">

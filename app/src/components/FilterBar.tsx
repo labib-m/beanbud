@@ -18,7 +18,7 @@ type Props = {
 
 const COPY = {
   notebook: { placeholder: 'Search your notebook: cafe, drink or note', hint: 'Searching only your own entries' },
-  everyone: { placeholder: "Search everyone: cafe, drink, note or person", hint: "Searching every person's entries" },
+  everyone: { placeholder: "Search everyone: cafe, drink, note or person", hint: '' },
 }
 
 /** The same controls on the Notebook and the Feed (specv2 §7 Filter row). Only the reach of the search differs. Sorting lives in the view tabs above. */
@@ -32,7 +32,7 @@ export function FilterBar({ scope, q, onQ, city, onCity, cities, area, onArea, a
         <input className="search-input" type="search" placeholder={copy.placeholder} aria-label={copy.placeholder} value={q} onChange={(e) => onQ(e.target.value)} />
         {q && <button type="button" className="search-clear" onClick={() => onQ('')}>Clear</button>}
       </div>
-      <p className={`scope-hint ${scope}`}>{copy.hint}</p>
+      {copy.hint && <p className={`scope-hint ${scope}`}>{copy.hint}</p>}
       <div className="filter-row">
         <span className="filter-pill-wrap">
           <select className="filter-pill" aria-label="City" value={city} onChange={(e) => { onCity(e.target.value); onArea('') }}>

@@ -103,6 +103,9 @@ body {
 .input.sm { padding: 10px 14px; font-size: 14px; }
 textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row2 > * { min-width: 0; }
+.input[type='time'] { min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; }
+.row2 .input[type='time'] { padding: 10px 8px; font-size: 13.5px; text-align: center; }
 .combo { position: relative; }
 .suggest { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; margin: 4px 0 0; padding: 6px; list-style: none; background: var(--surf2); border-radius: 16px; box-shadow: 0 10px 24px rgba(46, 43, 37, 0.26); }
 .suggest li { padding: 9px 12px; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; }
