@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Stars } from '../components/Stars'
 import { fetchDirectory } from '../data/cafes'
+import { fetchLiteVisits } from '../data/social'
 import { useLoad } from '../data/useLoad'
+import { cafeRating } from '../lib/cafeInfo'
 import { groupAlphabetically, matchesQuery, type DirectoryCafe } from '../lib/directory'
 
 /** Every cafe in the shared directory, A to Z. Ranking lives in the Feed's view tabs, not here. */
 export function Directory() {
-  const { data: cafes, error, loading } = useLoad(() => fetchDirectory(), [])
+  const { data, error, loading } = useLoad(async () => {
+    const [cafes, visits] = await Promise.all([fetchDirectory(), fetchLiteVisits()])
+    return { cafes, visits }
+  }, [])
+  const cafes = data?.cafes ?? null
   const [query, setQuery] = useState('')
   const [city, setCity] = useState('')
   const [area, setArea] = useState('')
@@ -21,6 +28,12 @@ export function Directory() {
     () => (cafes ?? []).filter((c) => matchesQuery(c, query) && (!city || c.city === city) && (!area || c.area === area)),
     [cafes, query, city, area],
   )
+  // Same figure as the cafe's own page: the mean of every rated visit, by anyone.
+  const averages = useMemo(() => {
+    const byCafe = new Map<string, (number | null)[]>()
+    for (const v of data?.visits ?? []) byCafe.set(v.cafe_id, [...(byCafe.get(v.cafe_id) ?? []), v.overall])
+    return new Map([...byCafe].map(([id, overalls]) => [id, cafeRating(overalls).average]))
+  }, [data])
   const alpha = useMemo(() => groupAlphabetically(filtered), [filtered])
 
   const total = cafes?.length ?? 0
@@ -78,6 +91,9 @@ export function Directory() {
               <li key={c.id}>
                 <Link className="recent-row" to={`/cafes/${c.id}`}>
                   <span className="recent-main"><b>{c.name}</b><span className="muted small">{[c.area, c.city].filter(Boolean).join(', ')}</span></span>
+                  {(averages.get(c.id) ?? 0) > 0 && (
+                    <span className="row-rating"><b>{averages.get(c.id)!.toFixed(1)}</b><Stars value={averages.get(c.id)!} size={13} /></span>
+                  )}
                   <span className="muted" aria-hidden="true">›</span>
                 </Link>
               </li>
