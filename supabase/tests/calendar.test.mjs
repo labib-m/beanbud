@@ -30,6 +30,7 @@ test('buildMonth: Sunday-first weeks, padded, September 2026 starts on a Tuesday
   assert.ok(v.weeks.every((w) => w.length === 7))
   assert.equal(v.visits, 3)
   assert.equal(v.days, 2)
+  assert.equal(v.weeks[0][2].iso, '2026-09-01')
 })
 
 test('buildMonth: future days and today are flagged, and a month with no visits is all zero', () => {

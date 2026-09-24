@@ -2,7 +2,7 @@
 // the shared month helpers (tested in supabase/tests/calendar.test.mjs).
 import { MONTH_NAMES, daysInMonth } from './segments.ts'
 
-export type DayCell = { day: number; count: number; future: boolean; today: boolean }
+export type DayCell = { day: number; iso: string; count: number; future: boolean; today: boolean }
 export type MonthView = {
   year: number
   month: number            // 0-11
@@ -44,7 +44,7 @@ export function buildMonth(year: number, month: number, counts: Map<string, numb
     const count = counts.get(iso) ?? 0
     visits += count
     if (count) days++
-    cells.push({ day, count, future: iso > today, today: iso === today })
+    cells.push({ day, iso, count, future: iso > today, today: iso === today })
   }
   while (cells.length % 7) cells.push(null)
   const weeks: (DayCell | null)[][] = []

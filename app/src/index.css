@@ -514,3 +514,10 @@ textarea.input.area.short { min-height: 70px; }
 .reaction span[aria-hidden] { font-size: 13px; line-height: 1.2; }
 .reaction.mine { background: var(--acc); border-color: var(--acc); color: var(--accInk); }
 .reaction:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* ---- calendar: tapping a logged day ---- */
+button.cal-day { font: 700 12px var(--text); cursor: pointer; padding: 0; }
+button.cal-day:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.day-log { display: flex; flex-direction: column; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.day-log:last-child { border-bottom: 0; }
+.day-log .text-link { align-self: flex-start; margin-top: 4px; background: none; border: 0; padding: 0; cursor: pointer; font: 600 13px var(--text); }
