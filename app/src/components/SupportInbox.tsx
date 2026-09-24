@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { deleteSupportMessage, fetchSupportMessages } from '../data/support'
 import type { SupportMessage } from '../lib/types'
 import { PersonLink } from './PersonLink'
@@ -10,7 +11,8 @@ const stamp = (iso: string) =>
 export function SupportInbox() {
   const [list, setList] = useState<SupportMessage[] | null>(null)
   const [err, setErr] = useState('')
-  const [open, setOpen] = useState(false)
+  const [params] = useSearchParams()
+  const [open, setOpen] = useState(() => params.get('inbox') === '1')
   const [armed, setArmed] = useState<string | null>(null)
 
   useEffect(() => {

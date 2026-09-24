@@ -143,7 +143,7 @@ It prints a **Public Key** and a **Private Key**. The public one is fine to shar
 | `VAPID_SUBJECT` | `mailto:` plus an email of yours. The push standard requires it; push services may use it to contact you if something's misbehaving. It is never shown to users. |
 | `PUSH_WEBHOOK_SECRET` | A long random string (`openssl rand -hex 32 \| pbcopy`, same as the others). Proves the request calling this function really is your database, not a stranger who found the URL. |
 
-**4. Database Webhooks** (Database → Webhooks → Create a new hook) — **two** of these, both pointed at the same function:
+**4. Database Webhooks** (Database → Webhooks → Create a new hook) — **three** of these, all pointed at the same function:
 
 - Name: `send-push-on-visit` (or anything).
   Table: `visits`. Events: **Insert** and **Update**.
@@ -153,6 +153,10 @@ It prints a **Public Key** and a **Private Key**. The public one is fine to shar
   Table: `announcements`. Events: **Insert** only.
   Type: **Supabase Edge Functions**, function: `send-push`.
   HTTP Headers: same as above, `x-webhook-secret` = `PUSH_WEBHOOK_SECRET`.
+- Name: `send-push-on-support-message` (or anything).
+  Table: `support_messages`. Events: **Insert** only.
+  Type: **Supabase Edge Functions**, function: `send-push`.
+  HTTP Headers: same as above. This one notifies only the admin (`is_admin`), when someone sends a message from You → Contact.
 
 **5. Database migration.** Run `supabase/migrations/20260922000100_push_subscriptions.sql` in the SQL editor — it creates the table that remembers who has notifications on.
 

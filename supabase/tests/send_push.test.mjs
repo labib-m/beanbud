@@ -38,3 +38,16 @@ test('notificationFor: editing an existing visit says "just updated", same heade
   assert.equal(n.body, '@nabs just updated their visit to Dose Espresso')
   assert.equal(n.url, '/cafes/c1')
 })
+
+test('supportNotification: goes to the admin with who wrote it, a one-line preview, and opens the inbox', () => {
+  const n = m.supportNotification('Nabila', 'The map link\n  on Barock   is wrong')
+  assert.equal(n.title, 'New message')
+  assert.equal(n.body, 'Nabila: The map link on Barock is wrong')
+  assert.equal(n.url, '/feed?tab=wire&inbox=1')
+})
+
+test('supportNotification: a long message is cut to a short preview', () => {
+  const n = m.supportNotification('Nabila', 'x'.repeat(500))
+  assert.equal(n.body.length, 'Nabila: '.length + 120)
+  assert.ok(n.body.endsWith('…'))
+})

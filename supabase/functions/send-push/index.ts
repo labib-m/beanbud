@@ -1,11 +1,13 @@
 // Bean Bud — send-push: notify everyone (except the author) when a visit is logged or edited,
-// and notify everyone (except the poster) when a new Brew Wire announcement goes out.
+// notify everyone (except the poster) when a new Brew Wire announcement goes out, and notify
+// only the admin when someone sends a message through You → Contact.
 //
-// This function does not run on a schedule and nothing in the app calls it directly. TWO
+// This function does not run on a schedule and nothing in the app calls it directly. THREE
 // Database Webhooks (Database → Webhooks in the Supabase dashboard) call it automatically:
 //   1. INSERT or UPDATE on "visits"
 //   2. INSERT on "announcements"
-// both pointed at this same function, with the same "x-webhook-secret" header.
+//   3. INSERT on "support_messages"
+// all pointed at this same function, with the same "x-webhook-secret" header.
 //
 // Deploy with "Verify JWT" switched OFF, same reason as pin-auth: the webhook is not a signed-in
 // user, it is Supabase's own server calling in. Instead this function checks a shared secret
@@ -58,6 +60,13 @@ export function announcementNotification(a: { title: string; body: string | null
   return { title: HEADER, body: a.title, url: '/feed?tab=wire' }
 }
 
+/** The notification only the admin gets when someone sends a message through Contact. */
+export function supportNotification(who: string, text: string) {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  const preview = flat.length > 120 ? flat.slice(0, 119) + '…' : flat
+  return { title: 'New message', body: `${who}: ${preview}`, url: '/feed?tab=wire&inbox=1' }
+}
+
 type WebhookBody = {
   type?: string
   table?: string
@@ -106,13 +115,24 @@ async function handle(req: Request): Promise<Response> {
     return await broadcast(db, message, record.created_by)
   }
 
+  if (body.table === 'support_messages' && body.type === 'INSERT' && record?.id && record.body) {
+    const [{ data: sender }, { data: admins }] = await Promise.all([
+      record.user_id ? db.from('profiles').select('display_name, handle').eq('id', record.user_id).maybeSingle() : Promise.resolve({ data: null }),
+      db.from('profiles').select('id').eq('is_admin', true),
+    ])
+    const adminIds = (admins ?? []).map((a: { id: string }) => a.id)
+    if (adminIds.length === 0) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 })
+    return await broadcast(db, supportNotification(authorName(sender ?? null), record.body), undefined, adminIds)
+  }
+
   return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 })
 }
 
-/** Sends one message to every subscribed device except (optionally) the person who caused it. */
-async function broadcast(db: ReturnType<typeof admin>, message: unknown, exceptUserId?: string) {
+/** Sends one message to every subscribed device (or only `onlyUserIds`'), except the person who caused it. */
+async function broadcast(db: ReturnType<typeof admin>, message: unknown, exceptUserId?: string, onlyUserIds?: string[]) {
   let q = db.from('push_subscriptions').select('id, endpoint, p256dh_key, auth_key')
   if (exceptUserId) q = q.neq('user_id', exceptUserId)
+  if (onlyUserIds) q = q.in('user_id', onlyUserIds)
   const { data: subs, error: subsError } = await q
 
   if (subsError) { console.error('send-push: could not read subscriptions', subsError.message); return new Response(JSON.stringify({ ok: false }), { status: 200 }) }
