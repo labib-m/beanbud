@@ -495,3 +495,9 @@ textarea.input.area.short { min-height: 70px; }
 /* ---- support: You -> Contact, and the admin inbox in Brew Wire ---- */
 .contact-blurb { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink2); }
 .inbox { margin: 0 0 16px; }
+
+/* ---- wishlist ---- */
+.btn.ghost.bookmark { display: inline-flex; align-items: center; gap: 7px; }
+.btn.ghost.bookmark.on { color: var(--acc); border-color: var(--acc); }
+.wish-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wish-main { flex: 1; min-width: 0; color: inherit; text-decoration: none; }

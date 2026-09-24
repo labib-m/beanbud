@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { BookmarkButton } from '../components/BookmarkButton'
 import { PersonLink } from '../components/PersonLink'
 import { Stars } from '../components/Stars'
 import { fetchCafePage } from '../data/cafes'
@@ -140,6 +141,7 @@ function FriendsOnlyHeader({ cafe, average, friends }: { cafe: Cafe; average: nu
       <p className="cafe-place">{[cafe.area, cafe.city].filter(Boolean).join(', ')}</p>
       <p className="cafe-score-line"><b>{average ? average.toFixed(1) : '–'}</b><Stars value={average} size={16} /></p>
       <p className="muted small">from {friends} {friends === 1 ? 'friend' : 'friends'} · not in your notebook</p>
+      <BookmarkButton cafeId={cafe.id} />
     </>
   )
 }

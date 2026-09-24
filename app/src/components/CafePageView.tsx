@@ -4,6 +4,7 @@ import { drinkReviews, publicNotes, recentLogs, visitorCount, type CafeRating, t
 import { describeRevision, type Revision } from '../lib/history'
 import { fmtDate } from '../lib/stats'
 import { Avatar } from './Avatar'
+import { BookmarkButton } from './BookmarkButton'
 import { PersonLink } from './PersonLink'
 import { VisitLog } from './VisitLog'
 import { Stars } from './Stars'
@@ -40,6 +41,7 @@ export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, on
         </p>
         <div className="row-btns">
           <button className="btn ghost" onClick={onEdit}>Edit cafe</button>
+          {myVisitCount === 0 && <BookmarkButton cafeId={cafe.id} />}
           {myVisitCount > 0 && <Link className="text-link" to={`/cafe/${cafe.id}`}>Your brews here ({myVisitCount}) →</Link>}
         </div>
       </header>

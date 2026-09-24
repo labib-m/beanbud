@@ -5,6 +5,7 @@ import { Avatar } from '../components/Avatar'
 import { ProfileSummary } from '../components/ProfileSummary'
 import { MonthActivityStrip } from '../components/MonthActivityStrip'
 import { RecentSections } from '../components/RecentSections'
+import { WishlistSection } from '../components/WishlistSection'
 import { ContactForm } from '../components/ContactForm'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { NotificationsToggle } from '../components/NotificationsToggle'
@@ -70,6 +71,8 @@ export function You() {
               <span className="month-more">Full calendar ›</span>
             </Link>
           )}
+
+          <WishlistSection visitedCafeIds={data.mine.map((v) => v.cafe_id)} />
 
           <RecentSections userId={me} own limit={3} />
 

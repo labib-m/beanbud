@@ -199,6 +199,13 @@ export const VISIT_DETAIL_COLUMNS =
   'verdict, currency, price_band, spend, opens, closes, hours_note, parking, parking_note, area_note, good_for, amenities, public_note, ' +
   'visit_drinks(drink_type, price, score, sort_order)'
 
+/** A cafe on your wishlist ("want to try"). */
+export type WishlistItem = {
+  cafe_id: string
+  created_at: string
+  cafes: { id: string; name: string; city: string; area: string }
+}
+
 /** A message someone sent the developer through You -> Contact. Only the admin can read these. */
 export type SupportMessage = {
   id: string
