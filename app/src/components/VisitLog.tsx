@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { fmtDate, money } from '../lib/stats'
 import { PRICE_BANDS, SCORES, VERDICTS, currencySymbol, type VisitDetail } from '../lib/types'
+import { CriteriaBar } from './CriteriaBar'
 import { Stars } from './Stars'
 
 const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '')
@@ -21,9 +22,7 @@ export function VisitDetails({ v }: { v: VisitDetail }) {
 
   return (
     <div className="visit-log-body">
-      {scores.map((s) => (
-        <div className="criteria-row" key={s.label}><span className="criteria-label">{s.label}</span><span className="muted small">{s.value}</span></div>
-      ))}
+      {scores.map((s) => <CriteriaBar key={s.label} label={s.label} value={Number(s.value)} />)}
       {drinks.length > 0 && (
         <div className="visit-log-drinks">
           {drinks.map((d, i) => (

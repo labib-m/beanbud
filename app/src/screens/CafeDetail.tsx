@@ -81,7 +81,7 @@ function VisitLogRow({ v, open, onToggle, onEdit }: { v: FullVisit; open: boolea
         <div className="visit-log-body">
           {criteria.map((c) => {
             const s = scoreOf(v, c.key)
-            return <div className="criteria-row" key={c.key}><span className="criteria-label">{c.label}</span><span className="muted small">{s ?? '–'}</span></div>
+            return <CriteriaBar key={c.key} label={c.label} value={s ?? 0} />
           })}
           {v.visit_drinks.length > 0 && (
             <div className="visit-log-drinks">
