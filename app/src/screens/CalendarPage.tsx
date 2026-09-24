@@ -17,7 +17,7 @@ export function CalendarPage() {
   }, [visits, today])
 
   return (
-    <main className="screen">
+    <main className="screen detail">
       <Link className="back" to="/you">‹ You</Link>
       <h1 className="title">Calendar<span className="dot">.</span></h1>
       <p className="people-sub">Every day you brewed</p>

@@ -158,9 +158,9 @@ textarea.input.area { border-radius: 20px; min-height: 110px; resize: vertical; 
 .empty h2 { font: 400 23px/1.1 var(--display); margin: 0; }
 
 /* ---- cafe detail ---- */
-.detail { padding-top: 0; }
+.screen.detail { padding-top: calc(32px + env(safe-area-inset-top)); }
 .detail-name { font: 400 32px/1.02 var(--display); margin: 0 0 4px; text-wrap: balance; }
-.back { color: var(--acc); font-weight: 700; font-size: 13.5px; text-decoration: none; }
+.back { display: inline-block; margin-bottom: 8px; color: var(--acc); font-weight: 700; font-size: 13.5px; text-decoration: none; }
 .section { margin-bottom: 22px; }
 .section h3 { font: 400 17px/1.1 var(--display); margin: 0 0 11px; }
 .crit-row { display: grid; grid-template-columns: 78px auto 1fr; align-items: center; gap: 10px; margin: 7px 0; font-size: 13px; }
