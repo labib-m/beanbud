@@ -6,6 +6,7 @@ import { Avatar } from '../components/Avatar'
 import { FilterBar } from '../components/FilterBar'
 import { Directory } from './Directory'
 import { Stars } from '../components/Stars'
+import { ViewTabs } from '../components/ViewTabs'
 import { useBrewWire } from '../data/BrewWireProvider'
 import { useVisits } from '../data/VisitsProvider'
 import { fetchFeed } from '../data/social'
@@ -14,7 +15,7 @@ import { displayName, handleText, relTime } from '../lib/people'
 import { groupByCafe, money, todayLocal } from '../lib/stats'
 import { currencySymbol, type FeedVisit } from '../lib/types'
 import { citiesOf, compareLabel, filterAndSort, type FeedRow } from '../lib/feedFilter'
-import { emptySelection, SORT_OPTIONS, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
+import { emptySelection, SORT_TAB_LABEL, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
 import { featuresOf } from '../lib/visitFeatures'
 import { segmentByDay, type DateBlock } from '../lib/segments'
 
@@ -45,7 +46,7 @@ function FeedItem({ v, featured, me, mineForCafe }: { v: FeedVisit; featured: bo
   )
 }
 
-function Activity() {
+function Activity({ sort }: { sort: Sort }) {
   const { session } = useAuth()
   const me = session!.user.id
   const { visits: mine } = useVisits()
@@ -55,7 +56,6 @@ function Activity() {
   // filters are still YOUR most-used tags, drinks and amenities, applied to everyone's visits.
   const [q, setQ] = useState('')
   const [city, setCity] = useState('')
-  const [sort, setSort] = useState<Sort>('recent')
   const [sel, setSel] = useState<Selected>(emptySelection)
   const presets = useMemo(() => topPresets((mine ?? []).map(featuresOf)), [mine])
 
@@ -79,7 +79,7 @@ function Activity() {
   // specv2 §9.2: date segmentation only for "Most recent"; any other sort is one group named after it.
   const blocks: DateBlock<FeedVisit>[] = useMemo(() => {
     if (sort !== 'recent') {
-      const label = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? ''
+      const label = SORT_TAB_LABEL[sort]
       return shown.length ? [{ kind: 'group', key: sort, label, items: shown }] : []
     }
     const countMonth = (year: number, month: number) => {
@@ -97,7 +97,7 @@ function Activity() {
   return (
     <>
       <FilterBar
-        scope="everyone" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities} sort={sort} onSort={setSort}
+        scope="everyone" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities}
         presets={presets} selected={sel}
         onToggle={(cat, label) => setSel((cur) => toggleSelected(cur, cat, label))}
         onClearChips={() => setSel(emptySelection())}
@@ -137,32 +137,42 @@ function Activity() {
   )
 }
 
+type FeedTab = 'recent' | 'score' | 'directory' | 'wire'
+
+const TAB_PARAM: Record<FeedTab, string | null> = { recent: null, score: 'top', directory: 'directory', wire: 'wire' }
+const SUBTITLE: Record<FeedTab, string> = {
+  recent: 'Where others bean',
+  score: 'Where others bean',
+  directory: 'Every cafe, catalogued',
+  wire: 'Straight from the roastery',
+}
+
 export function Feed() {
   const [params, setParams] = useSearchParams()
-  const tabParam = params.get('tab')
-  const tab = tabParam === 'directory' ? 'directory' : tabParam === 'wire' ? 'wire' : 'activity'
-  const { unreadCount, markAllSeen } = useBrewWire()
+  const param = params.get('tab')
+  const tab: FeedTab = param === 'top' ? 'score' : param === 'directory' ? 'directory' : param === 'wire' ? 'wire' : 'recent'
+  const { unreadCount } = useBrewWire()
 
-  function go(t: 'activity' | 'directory' | 'wire') {
-    if (t === 'wire') markAllSeen()
-    setParams(t === 'activity' ? {} : { tab: t }, { replace: true })
+  function go(t: FeedTab) {
+    const value = TAB_PARAM[t]
+    setParams(value ? { tab: value } : {}, { replace: true })
   }
 
   return (
     <main className="screen">
-      <div className="title-row">
-        <h1 className="title">Feed<span className="dot">.</span></h1>
-        <div className="seg" role="tablist" aria-label="Feed view">
-          <button role="tab" aria-selected={tab === 'activity'} onClick={() => go('activity')}>Activity</button>
-          <button role="tab" aria-selected={tab === 'directory'} onClick={() => go('directory')}>Directory</button>
-          <button role="tab" aria-selected={tab === 'wire'} onClick={() => go('wire')}>
-            Brew Wire{unreadCount > 0 && <span className="seg-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
-          </button>
-        </div>
-      </div>
-      {tab === 'activity' && <p className="people-sub">Where others bean</p>}
+      <h1 className="title">Feed<span className="dot">.</span></h1>
+      <p className="people-sub">{SUBTITLE[tab]}</p>
+      <ViewTabs
+        label="Feed view" value={tab} onChange={go}
+        tabs={[
+          { key: 'recent', label: 'Recent' },
+          { key: 'score', label: 'Top rated' },
+          { key: 'directory', label: 'Directory' },
+          { key: 'wire', label: 'Brew Wire', badge: unreadCount },
+        ]}
+      />
+      {(tab === 'recent' || tab === 'score') && <Activity sort={tab} />}
       {tab === 'directory' && <Directory />}
-      {tab === 'activity' && <Activity />}
       {tab === 'wire' && <BrewWire />}
     </main>
   )

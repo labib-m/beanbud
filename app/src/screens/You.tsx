@@ -1,6 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
-import { AnnouncementComposer } from '../components/AnnouncementComposer'
 import { Avatar } from '../components/Avatar'
 import { MonthActivityStrip } from '../components/MonthActivityStrip'
 import { RecentSections } from '../components/RecentSections'
@@ -71,8 +70,6 @@ export function You() {
           </p>
           {data.profile.tagline && <p className="profile-intro">{data.profile.tagline}</p>}
 
-          <RecentSections userId={me} own />
-
           {month && (
             <section className="section month-summary">
               <h3>{MONTH_NAMES[tm - 1]}<span className="year"> {ty}</span></h3>
@@ -81,8 +78,9 @@ export function You() {
             </section>
           )}
 
+          <RecentSections userId={me} own limit={3} />
+
           <NotificationsToggle />
-          {data.profile.is_admin && <AnnouncementComposer />}
           <p className="muted spaced">Other people see your name, username and these details. Your notes stay private.</p>
           <div className="row-btns">
             <button className="btn ghost" onClick={() => setEditing(true)}>Edit profile</button>

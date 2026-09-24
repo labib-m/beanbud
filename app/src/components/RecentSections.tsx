@@ -85,7 +85,7 @@ export function RecentView({ cafes, drinks, own = false, name }: { cafes: Recent
       </section>
 
       <section className="section">
-        <span className="section-label">{own ? 'Your recent coffee' : 'Their recent coffee'}</span>
+        <span className="section-label">{own ? 'Your recent brews' : 'Their recent brews'}</span>
         {drinks.length === 0 ? (
           <p className="muted">{who}'t logged a drink yet.</p>
         ) : (
@@ -102,10 +102,10 @@ export function RecentView({ cafes, drinks, own = false, name }: { cafes: Recent
  * else's notebook — CafeDetail already shows the right header (yours, or "from N friends · not
  * in your notebook") depending on whether it's in the viewer's own notebook.
  */
-export function RecentSections({ userId, own = false, name }: { userId: string; own?: boolean; name?: string }) {
+export function RecentSections({ userId, own = false, name, limit }: { userId: string; own?: boolean; name?: string; limit?: number }) {
   const { data, error, loading } = useLoad(() => fetchRecentActivity(userId), [userId])
-  const cafes = useMemo(() => recentCafes(data ?? []), [data])
-  const drinks = useMemo(() => recentDrinks(data ?? []), [data])
+  const cafes = useMemo(() => recentCafes(data ?? [], limit), [data, limit])
+  const drinks = useMemo(() => recentDrinks(data ?? [], limit), [data, limit])
 
   if (error) return <p className="error" role="alert">{error}</p>
   if (loading && !data) return <p className="muted">Loading…</p>

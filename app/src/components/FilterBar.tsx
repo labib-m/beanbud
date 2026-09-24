@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_LABEL, SORT_OPTIONS, hasSelection, isSelected, type Category, type Presets, type Selected, type Sort } from '../lib/filters'
+import { CATEGORIES, CATEGORY_LABEL, hasSelection, isSelected, type Category, type Presets, type Selected } from '../lib/filters'
 
 type Props = {
   scope: 'notebook' | 'everyone'   // notebook = only your own entries; everyone = every person's entries
@@ -7,10 +7,6 @@ type Props = {
   city: string
   onCity: (c: string) => void
   cities: string[]
-  sort: Sort
-  onSort: (s: Sort) => void
-  /** Notebook drives sort with its own tabs instead (specv2 §8.1); this hides the redundant sort pill. */
-  hideSort?: boolean
   presets: Presets
   selected: Selected
   onToggle: (cat: Category, label: string) => void
@@ -22,8 +18,8 @@ const COPY = {
   everyone: { placeholder: "Search everyone: cafe, drink, note or person", hint: "Searching every person's entries" },
 }
 
-/** The same controls on the Notebook and the Feed (specv2 §7 Filter row). Only the reach of the search, and whether sort shows here, differ. */
-export function FilterBar({ scope, q, onQ, city, onCity, cities, sort, onSort, hideSort, presets, selected, onToggle, onClearChips }: Props) {
+/** The same controls on the Notebook and the Feed (specv2 §7 Filter row). Only the reach of the search differs. Sorting lives in the view tabs above. */
+export function FilterBar({ scope, q, onQ, city, onCity, cities, presets, selected, onToggle, onClearChips }: Props) {
   const copy = COPY[scope]
   const chips = CATEGORIES.flatMap((cat) => presets[cat].map((label) => ({ cat, label })))
   return (
@@ -41,13 +37,6 @@ export function FilterBar({ scope, q, onQ, city, onCity, cities, sort, onSort, h
             {cities.map((c) => <option key={c}>{c}</option>)}
           </select>
         </span>
-        {!hideSort && (
-          <span className="filter-pill-wrap">
-            <select className="filter-pill" aria-label="Sort" value={sort} onChange={(e) => onSort(e.target.value as Sort)}>
-              {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </span>
-        )}
         {chips.length > 0 && <span className="filter-sep" aria-hidden="true" />}
         {chips.map(({ cat, label }) => (
           <button

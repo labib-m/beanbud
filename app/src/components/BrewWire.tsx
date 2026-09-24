@@ -1,16 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useBrewWire } from '../data/BrewWireProvider'
 import { sortNewest } from '../lib/announcements'
+import { AnnouncementComposer } from './AnnouncementComposer'
 
 const stamp = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 
-/** Every developer announcement, newest first — the third tab in Feed. Delete is admin-only. */
+/**
+ * Every developer announcement, newest first — the Brew Wire view in Feed. Opening it marks
+ * everything as read; ?post=<id> (from the floating banner) scrolls to and highlights that post.
+ * Posting and deleting are admin-only.
+ */
 export function BrewWire() {
-  const { list, isAdmin, removeAnnouncement } = useBrewWire()
+  const { list, isAdmin, markSeen, removeAnnouncement } = useBrewWire()
+  const [params] = useSearchParams()
+  const target = params.get('post')
   const [armed, setArmed] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const sorted = sortNewest(list)
+  const newestId = sorted[0]?.id
+
+  useEffect(() => { if (newestId) markSeen(newestId) }, [newestId, markSeen])
+
+  useEffect(() => {
+    if (target) document.getElementById(`post-${target}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [target, list.length])
 
   async function remove(id: string) {
     if (armed !== id) { setArmed(id); return }
@@ -25,14 +40,14 @@ export function BrewWire() {
 
   return (
     <>
-      <p className="people-sub">Straight from the roastery</p>
+      {isAdmin && <AnnouncementComposer />}
       {sorted.length === 0 ? (
         <p className="muted">Nothing brewing yet.</p>
       ) : (
         <ul className="plain-rows">
           {sorted.map((a) => (
-            <li key={a.id}>
-              <div className="plain-row">
+            <li key={a.id} id={`post-${a.id}`}>
+              <div className={`plain-row${a.id === target ? ' wire-target' : ''}`}>
                 <div className="row-top">
                   <p className="announcement-title">{a.title}</p>
                   {isAdmin && (

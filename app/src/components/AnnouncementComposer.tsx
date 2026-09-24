@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { postAnnouncement } from '../data/announcements'
+import { useBrewWire } from '../data/BrewWireProvider'
 
-/** Admin-only (the caller checks profile.is_admin before rendering this). Posts to everyone's Brew Wire. */
+/** Admin-only (the caller checks isAdmin before rendering this). Posts to everyone's Brew Wire. */
 export function AnnouncementComposer() {
+  const { refresh } = useBrewWire()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -16,6 +18,7 @@ export function AnnouncementComposer() {
     setBusy(true)
     try {
       await postAnnouncement(title, body)
+      await refresh()
       setTitle('')
       setBody('')
       setOpen(false)
@@ -29,11 +32,10 @@ export function AnnouncementComposer() {
 
   return (
     <div className="admin-zone">
-      <p className="section-label">Admin</p>
       <button type="button" className="btn ghost" onClick={() => { setOpen((o) => !o); setSent(false) }}>
         {open ? 'Cancel' : 'Post to Brew Wire'}
       </button>
-      {sent && <p className="muted small">Sent — everyone will see it on the Brew Wire.</p>}
+      {sent && <p className="muted small">Sent to everyone.</p>}
       {open && (
         <div className="stack">
           {err && <p className="error small" role="alert">{err}</p>}

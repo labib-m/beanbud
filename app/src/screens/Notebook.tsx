@@ -6,6 +6,7 @@ import { relativeDate, segmentNotebook, type NotebookBlock } from '../lib/segmen
 import { groupByCafe, todayLocal, trend, type CafeGroup } from '../lib/stats'
 import { currencySymbol, noteOf } from '../lib/types'
 import { FilterBar } from '../components/FilterBar'
+import { ViewTabs } from '../components/ViewTabs'
 import { emptySelection, matchesCafe, matchesSearch, SORT_TAB_LABEL, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
 import { featuresOf } from '../lib/visitFeatures'
 
@@ -117,16 +118,10 @@ export function Notebook() {
 
       {visits.length > 0 && groups.length >= 2 && (
         <>
-          <div className="sort-tabs" role="tablist" aria-label="Sort">
-            {TABS.map((t) => (
-              <button key={t} type="button" role="tab" aria-selected={sort === t} className={`sort-tab${sort === t ? ' active' : ''}`} onClick={() => setSort(t)}>
-                {SORT_TAB_LABEL[t]}
-              </button>
-            ))}
-          </div>
+          <ViewTabs label="Sort" tabs={TABS.map((t) => ({ key: t, label: SORT_TAB_LABEL[t] }))} value={sort} onChange={setSort} />
 
           <FilterBar
-            scope="notebook" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities} sort={sort} onSort={setSort} hideSort
+            scope="notebook" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities}
             presets={presets} selected={sel}
             onToggle={(cat, label) => setSel((cur) => toggleSelected(cur, cat, label))}
             onClearChips={() => setSel(emptySelection())}

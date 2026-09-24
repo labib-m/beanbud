@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { deleteAnnouncement, fetchAnnouncements } from './announcements'
 import { fetchMyProfile } from './social'
@@ -19,7 +19,7 @@ type Ctx = {
   unreadCount: number
   latestUnread: Announcement | null
   markSeen: (id: string) => void
-  markAllSeen: () => void
+  refresh: () => Promise<void>
   removeAnnouncement: (id: string) => Promise<void>
 }
 
@@ -43,14 +43,11 @@ export function BrewWireProvider({ children }: { children: ReactNode }) {
     fetchMyProfile(me).then((p) => setIsAdmin(p?.is_admin === true)).catch(() => {})
   }, [me])
 
-  function markSeen(id: string) {
+  const markSeen = useCallback((id: string) => {
     writeLastSeen(id)
     setLastSeen(id)
-  }
-  function markAllSeen() {
-    const newest = sortNewest(list)[0]
-    if (newest) markSeen(newest.id)
-  }
+  }, [])
+  const refresh = useCallback(async () => { setList(await fetchAnnouncements()) }, [])
   async function removeAnnouncement(id: string) {
     await deleteAnnouncement(id)
     setList((cur) => cur.filter((a) => a.id !== id))
@@ -61,7 +58,7 @@ export function BrewWireProvider({ children }: { children: ReactNode }) {
   const latestUnread = unread > 0 ? sorted[0] : null
 
   return (
-    <BrewWireContext.Provider value={{ list, isAdmin, unreadCount: unread, latestUnread, markSeen, markAllSeen, removeAnnouncement }}>
+    <BrewWireContext.Provider value={{ list, isAdmin, unreadCount: unread, latestUnread, markSeen, refresh, removeAnnouncement }}>
       {children}
     </BrewWireContext.Provider>
   )
