@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { BrewWire } from '../components/BrewWire'
 import { Avatar } from '../components/Avatar'
 import { PersonLink } from '../components/PersonLink'
+import { ReactionBar } from '../components/ReactionBar'
 import { VisitLog } from '../components/VisitLog'
 import { FilterBar } from '../components/FilterBar'
 import { Directory } from './Directory'
@@ -11,6 +12,7 @@ import { Stars } from '../components/Stars'
 import { ViewTabs } from '../components/ViewTabs'
 import { useBrewWire } from '../data/BrewWireProvider'
 import { useVisits } from '../data/VisitsProvider'
+import { fetchReactions, setReaction } from '../data/reactions'
 import { fetchFeed } from '../data/social'
 import { useLoad } from '../data/useLoad'
 import { displayName, handleText, relTime } from '../lib/people'
@@ -20,10 +22,11 @@ import { areasOf, citiesOf, compareLabel, filterAndSort, type FeedRow } from '..
 import { emptySelection, SORT_TAB_LABEL, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
 import { featuresOf } from '../lib/visitFeatures'
 import { segmentByDay, type DateBlock } from '../lib/segments'
+import { tally as tallyReactions, withMyReaction, type ReactionKind, type Tally } from '../lib/reactions'
 
 const SHOW_AT_MOST = 100
 
-function FeedItem({ v, featured, me, mineForCafe }: { v: FeedVisit; featured: boolean; me: string; mineForCafe: number | undefined }) {
+function FeedItem({ v, featured, me, mineForCafe, tally, onReact }: { v: FeedVisit; featured: boolean; me: string; mineForCafe: number | undefined; tally: Tally | undefined; onReact: (kind: ReactionKind | null) => void }) {
   const own = v.user_id === me
   const drink = v.visit_drinks[0]
   const sym = v.currency ? currencySymbol(v.currency).trim() : ''
@@ -44,7 +47,10 @@ function FeedItem({ v, featured, me, mineForCafe }: { v: FeedVisit; featured: bo
       {!own && mineForCafe != null && mineForCafe > 0 && (
         <p className="feed-compare">You gave it <b>{mineForCafe.toFixed(1)}</b> · {compareLabel(mineForCafe, Number(v.overall ?? 0))}</p>
       )}
-      <VisitLog v={v} />
+      <div className="log-actions">
+        <ReactionBar tally={tally} onReact={onReact} />
+        <VisitLog v={v} />
+      </div>
     </div>
   )
 }
@@ -53,6 +59,20 @@ function Activity({ sort, data, error, loading }: { sort: Sort; data: FeedVisit[
   const { session } = useAuth()
   const me = session!.user.id
   const { visits: mine } = useVisits()
+  const [reactions, setReactions] = useState<Map<string, Tally>>(new Map())
+  useEffect(() => {
+    fetchReactions().then((rows) => setReactions(tallyReactions(rows, me))).catch(() => {})
+  }, [me])
+
+  function react(visitId: string, kind: ReactionKind | null) {
+    const before = reactions.get(visitId)
+    setReactions((cur) => new Map(cur).set(visitId, withMyReaction(before, kind)))
+    setReaction(visitId, kind).catch(() => setReactions((cur) => {
+      const m = new Map(cur)
+      if (before) m.set(visitId, before); else m.delete(visitId)
+      return m
+    }))
+  }
 
   // The same four controls as the Notebook. The search reaches every person's entries; the quick
   // filters are still YOUR most-used tags, drinks and amenities, applied to everyone's visits.
@@ -129,7 +149,7 @@ function Activity({ sort, data, error, loading }: { sort: Sort; data: FeedVisit[
             </div>
             <ul className="plain-rows">
               {block.items.map((v, j) => (
-                <li key={v.id}><FeedItem v={v} featured={sort === 'recent' && i === 0 && j === 0} me={me} mineForCafe={myMeans.get(v.cafe_id)} /></li>
+                <li key={v.id}><FeedItem v={v} featured={sort === 'recent' && i === 0 && j === 0} me={me} mineForCafe={myMeans.get(v.cafe_id)} tally={reactions.get(v.id)} onReact={(kind) => react(v.id, kind)} /></li>
               ))}
             </ul>
           </section>
