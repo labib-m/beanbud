@@ -22,7 +22,9 @@ begin
   -- Bob (a normal user) can send a message as himself...
   perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  insert into public.support_messages (body) values ('The map link on Barock is wrong') returning id into msg;
+  -- (No RETURNING here: reading the new row back needs the admin-only select policy, which is
+  -- why the app inserts without asking for the row back.)
+  insert into public.support_messages (body) values ('The map link on Barock is wrong');
   raise notice 'PASS: a normal user can send a message';
 
   -- ...but not as someone else, and not an empty one.
@@ -48,6 +50,7 @@ begin
   if n <> 0 then raise exception 'FAIL: a normal user deleted a support message'; end if;
   raise notice 'PASS: a normal user cannot delete support messages';
   reset role;
+  select id into msg from public.support_messages where user_id = bob;
 
   -- Alice (admin) can read and delete.
   perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
