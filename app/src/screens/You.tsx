@@ -48,7 +48,7 @@ export function You() {
         <h1 className="title">You<span className="dot">.</span></h1>
         {data && <Avatar id={me} profile={data.profile} size={52} />}
       </div>
-      <p className="people-sub">{data ? identityLine(data.profile.handle, data.profile.home_city) || 'Add a username' : ''}</p>
+      <p className="people-sub">{data ? identityLine(data.profile.handle, data.profile.home_city) : ''}</p>
       {loading && <p className="muted">Loading…</p>}
       {error && <p className="error" role="alert">{error}</p>}
 
