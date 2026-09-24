@@ -5,6 +5,7 @@ import { Avatar } from '../components/Avatar'
 import { ProfileSummary } from '../components/ProfileSummary'
 import { MonthActivityStrip } from '../components/MonthActivityStrip'
 import { RecentSections } from '../components/RecentSections'
+import { ContactForm } from '../components/ContactForm'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { NotificationsToggle } from '../components/NotificationsToggle'
 import { deleteAccount } from '../data/auth'
@@ -26,6 +27,7 @@ export function You() {
   }, [me, tick])
   const [editing, setEditing] = useState(false)
   const [changingPin, setChangingPin] = useState(false)
+  const [contacting, setContacting] = useState(false)
 
   // The current month (it rolls over on its own), shown once you have any visit at all so it always opens the calendar page.
   const today = todayLocal()
@@ -54,7 +56,9 @@ export function You() {
 
       {data && changingPin && <SetPin first={false} onDone={() => setChangingPin(false)} onCancel={() => setChangingPin(false)} />}
 
-      {data && !editing && !changingPin && (
+      {data && contacting && <ContactForm onDone={() => setContacting(false)} />}
+
+      {data && !editing && !changingPin && !contacting && (
         <>
           <ProfileSummary stats={data.stats} usualOrder={data.profile.usual_order} tagline={data.profile.tagline} />
 
@@ -74,6 +78,7 @@ export function You() {
           <div className="row-btns">
             <button className="btn ghost" onClick={() => setEditing(true)}>Edit profile</button>
             <button className="btn ghost" onClick={() => setChangingPin(true)}>Change PIN</button>
+            <button className="btn ghost" onClick={() => setContacting(true)}>Contact</button>
             <button className="btn ghost" onClick={signOut}>Sign out</button>
           </div>
         </>

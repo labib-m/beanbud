@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useBrewWire } from '../data/BrewWireProvider'
 import { sortNewest } from '../lib/announcements'
 import { AnnouncementComposer } from './AnnouncementComposer'
+import { SupportInbox } from './SupportInbox'
 
 const stamp = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
@@ -41,6 +42,7 @@ export function BrewWire() {
   return (
     <>
       {isAdmin && <AnnouncementComposer />}
+      {isAdmin && <SupportInbox />}
       {sorted.length === 0 ? (
         <p className="muted">Nothing brewing yet.</p>
       ) : (

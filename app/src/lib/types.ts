@@ -199,6 +199,15 @@ export const VISIT_DETAIL_COLUMNS =
   'verdict, currency, price_band, spend, opens, closes, hours_note, parking, parking_note, area_note, good_for, amenities, public_note, ' +
   'visit_drinks(drink_type, price, score, sort_order)'
 
+/** A message someone sent the developer through You -> Contact. Only the admin can read these. */
+export type SupportMessage = {
+  id: string
+  user_id: string | null
+  body: string
+  created_at: string
+  profiles: { display_name: string | null; handle: string | null; avatar: string | null } | null
+}
+
 /** One row of the Feed: a visit by anyone, without private notes. */
 export type FeedVisit = VisitDetail & {
   cafes: { id: string; name: string; city: string; area: string }
