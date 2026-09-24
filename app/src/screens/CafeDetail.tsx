@@ -185,7 +185,7 @@ export function CafeDetail() {
     <main className="screen detail">
       <Link className="back" to="/">‹ Notebook</Link>
       <header className="cafe-header">
-        <h1 className="detail-name">{cafe.name}</h1>
+        <h1 className="detail-name"><Link className="name-link" to={`/cafes/${cafe.id}`}>{cafe.name}</Link></h1>
         {group
           ? <OwnHeader g={group} />
           : <FriendsOnlyHeader cafe={cafe} average={page!.rating.average} friends={visitorCount(page!.visits)} />}
@@ -218,7 +218,6 @@ export function CafeDetail() {
         <div className="detail-fact"><span className="fact-key">Address</span><span className="fact-value">{address || 'No address yet'}</span></div>
         <div className="detail-links">
           {cafe.map_url && <a className="text-link" href={cafe.map_url} target="_blank" rel="noopener noreferrer">Open in Maps ↗</a>}
-          <Link className="text-link" to={`/cafes/${cafe.id}`}>Cafe page →</Link>
         </div>
         {otherFacts.map(([k, v]) => (
           <div className="detail-fact" key={k}><span className="fact-key">{k}</span><span className="fact-value">{v}</span></div>
