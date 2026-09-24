@@ -4,6 +4,8 @@ import { useAuth } from './auth/AuthProvider'
 import { AddToHomeScreenGuide } from './components/AddToHomeScreenGuide'
 import { NotificationsBanner } from './components/NotificationsBanner'
 import { TabBar } from './components/TabBar'
+import { WireBanner } from './components/WireBanner'
+import { BrewWireProvider } from './data/BrewWireProvider'
 import { VisitsProvider } from './data/VisitsProvider'
 import { fetchMyProfile } from './data/social'
 import { useLoad } from './data/useLoad'
@@ -57,6 +59,7 @@ function Shell() {
     <>
       <Outlet />
       <TabBar />
+      <WireBanner />
       <NotificationsBanner />
       <AddToHomeScreenGuide />
     </>
@@ -76,6 +79,7 @@ export default function App() {
       mustChangePin={session.user.app_metadata?.must_change_pin === true}
     >
     <VisitsProvider userId={session.user.id}>
+    <BrewWireProvider>
       <Routes>
         <Route element={<Shell />}>
           <Route index element={<Notebook />} />
@@ -88,6 +92,7 @@ export default function App() {
           <Route path="*" element={<Placeholder title="Not found" blurb="There's nothing at this address." />} />
         </Route>
       </Routes>
+    </BrewWireProvider>
     </VisitsProvider>
     </ProfileGate>
   )
