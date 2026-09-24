@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { VISIT_DETAIL_COLUMNS } from '../lib/types'
 import { cafeRating, type CafeRating, type CafeVisit } from '../lib/cafeInfo'
 import type { DirectoryCafe } from '../lib/directory'
 import type { Revision } from '../lib/history'
@@ -32,7 +33,7 @@ export async function fetchCafePage(cafeId: string): Promise<CafePage | null> {
     supabase.from('cafes').select('id, name, city, area, address, map_url, code').eq('id', cafeId).maybeSingle(),
     supabase
       .from('visits')
-      .select('id, user_id, visited_on, created_at, overall, public_note, profiles(display_name, handle, avatar), visit_drinks(drink_type, score, sort_order)')
+      .select(`${VISIT_DETAIL_COLUMNS}, profiles(display_name, handle, avatar)`)
       .eq('cafe_id', cafeId)
       .order('visited_on', { ascending: false })
       .order('created_at', { ascending: false })

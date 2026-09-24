@@ -131,8 +131,6 @@ export function Notebook() {
             onClearChips={() => setSel(emptySelection())}
           />
 
-          <p className="result-count">{shown.length} {shown.length === 1 ? 'cafe' : 'cafes'}</p>
-
           {shown.length === 0 && <p className="muted">No matches. Clear the search, the city, the neighbourhood or the quick filters.</p>}
 
           {blocks.map((block, i) => {

@@ -1,15 +1,10 @@
 // What a cafe's public page shows, worked out from the visits people have logged there.
-// Pure, no imports (tested in supabase/tests/cafe_info.test.mjs).
+// Pure; the only import is a type (tested in supabase/tests/cafe_info.test.mjs).
 
-export type CafeVisit = {
-  id: string
-  user_id: string
-  visited_on: string
-  created_at: string
-  overall: number | null
-  public_note: string | null
+import type { VisitDetail } from './types.ts'
+
+export type CafeVisit = VisitDetail & {
   profiles: { display_name: string | null; handle: string | null; avatar?: string | null } | null
-  visit_drinks: { drink_type: string; score: number | null; sort_order: number }[]
 }
 
 type Who = CafeVisit['profiles']

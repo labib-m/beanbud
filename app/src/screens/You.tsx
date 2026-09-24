@@ -1,6 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { ProfileSummary } from '../components/ProfileSummary'
 import { MonthActivityStrip } from '../components/MonthActivityStrip'
 import { RecentSections } from '../components/RecentSections'
 import { AvatarPicker } from '../components/AvatarPicker'
@@ -9,7 +11,7 @@ import { deleteAccount } from '../data/auth'
 import { fetchLiteVisits, fetchMyProfile, updateProfile, type ProfileEdit } from '../data/social'
 import { useLoad } from '../data/useLoad'
 import { SetPin } from './SetPin'
-import { displayName, emptyProfile, handleText, statsFor } from '../lib/people'
+import { emptyProfile, identityLine, statsFor } from '../lib/people'
 import { MONTH_NAMES, monthActivityCounts } from '../lib/segments'
 import { todayLocal } from '../lib/stats'
 
@@ -25,14 +27,13 @@ export function You() {
   const [editing, setEditing] = useState(false)
   const [changingPin, setChangingPin] = useState(false)
 
-  // specv2 §8.6.8 / §9.4: only for the current month, and only when it has at least one visit.
+  // The current month (it rolls over on its own), shown once you have any visit at all so it always opens the calendar page.
   const today = todayLocal()
   const [ty, tm] = today.split('-').map(Number)
   const month = useMemo(() => {
-    if (!data) return null
+    if (!data || data.mine.length === 0) return null
     const counts = monthActivityCounts(data.mine.map((v) => v.visited_on), ty, tm - 1)
     const inMonth = data.mine.filter((v) => v.visited_on.startsWith(`${ty}-${String(tm).padStart(2, '0')}`))
-    if (inMonth.length === 0) return null
     return {
       counts,
       visits: inMonth.length,
@@ -43,8 +44,11 @@ export function You() {
 
   return (
     <main className="screen">
-      <h1 className="title">You<span className="dot">.</span></h1>
-      <p className="people-sub">How You bean?</p>
+      <div className="title-row profile-title">
+        <h1 className="title">You<span className="dot">.</span></h1>
+        {data && <Avatar id={me} profile={data.profile} size={52} />}
+      </div>
+      <p className="people-sub">{data ? identityLine(data.profile.handle, data.profile.home_city) || 'Add a username' : ''}</p>
       {loading && <p className="muted">Loading…</p>}
       {error && <p className="error" role="alert">{error}</p>}
 
@@ -52,30 +56,15 @@ export function You() {
 
       {data && !editing && !changingPin && (
         <>
-          <div className="profile-id">
-            <Avatar id={me} profile={data.profile} size={58} />
-            <div>
-              <h2 className="row-name">{displayName(data.profile) === 'Someone' ? 'Add your name' : displayName(data.profile)}</h2>
-              {handleText(data.profile) && <p className="handle">{handleText(data.profile)}</p>}
-              {data.profile.home_city && <p className="muted small">{data.profile.home_city}</p>}
-            </div>
-          </div>
-          <p className="stat-line">
-            {data.stats.cafes} {data.stats.cafes === 1 ? 'cafe' : 'cafes'} · {data.stats.visits} {data.stats.visits === 1 ? 'visit' : 'visits'} · {data.stats.cities} {data.stats.cities === 1 ? 'city' : 'cities'}
-          </p>
-          <p className="avg-line">
-            <span className="avg-star" aria-hidden="true">★</span>
-            <b>{data.stats.average ? data.stats.average.toFixed(1) : '–'}</b> average
-            {data.profile.usual_order && <> · usually {data.profile.usual_order}</>}
-          </p>
-          {data.profile.tagline && <p className="profile-intro">{data.profile.tagline}</p>}
+          <ProfileSummary stats={data.stats} usualOrder={data.profile.usual_order} tagline={data.profile.tagline} />
 
           {month && (
-            <section className="section month-summary">
+            <Link className="section month-summary" to="/calendar" aria-label="Open the calendar">
               <h3>{MONTH_NAMES[tm - 1]}<span className="year"> {ty}</span></h3>
               <p className="stat-line">{month.visits} {month.visits === 1 ? 'visit' : 'visits'} · {month.cafes} {month.cafes === 1 ? 'cafe' : 'cafes'} · {month.cities} {month.cities === 1 ? 'city' : 'cities'}</p>
               <MonthActivityStrip counts={month.counts} year={ty} month={tm - 1} today={today} />
-            </section>
+              <span className="month-more">Full calendar ›</span>
+            </Link>
           )}
 
           <RecentSections userId={me} own limit={3} />

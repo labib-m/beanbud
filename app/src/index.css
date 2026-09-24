@@ -297,8 +297,6 @@ textarea.input.area.short { min-height: 70px; }
 .wire-banner-dismiss { flex: none; background: none; border: 0; color: var(--fai); font-size: 18px; line-height: 1; cursor: pointer; padding: 2px; }
 
 /* ---- quick filter chips and the shared filter bar ---- */
-.scope-hint { margin: -2px 6px 0; font-size: 11.5px; color: var(--mut); }
-.scope-hint.everyone { color: var(--acc); font-weight: 600; }
 .clear-chips { align-self: flex-start; padding: 2px 4px; font-size: 12.5px; }
 
 /* ---- search field, filter row (specv2 §7) ---- */
@@ -419,7 +417,29 @@ textarea.input.area.short { min-height: 70px; }
 .people-id .row-name { margin: 0 0 2px; }
 
 /* ---- Profile: You and others (specv2 §8.6) ---- */
-.profile-id { display: flex; align-items: center; gap: 16px; margin: 22px 0 16px; }
+.title-row.profile-title { align-items: center; }
+.title-row.profile-title h1 { min-width: 0; }
+.profile-stats { text-align: center; margin: 4px 0 8px; }
+.profile-stats .avg-line { justify-content: center; }
+.profile-stats .profile-intro { margin-top: 12px; }
+.profile-about { text-align: center; margin: 4px 0 10px; }
+.person-link { color: inherit; text-decoration: none; }
+.person-link b { font-weight: 700; color: var(--ink); }
+.person-handle { color: var(--mut); font-size: 12px; font-weight: 400; }
+.log-toggle { align-self: flex-start; text-align: left; margin-top: 8px; padding: 2px 0; background: none; border: 0; font: 600 12px var(--text); color: var(--mut); cursor: pointer; }
+.log-toggle:focus-visible { outline: 2px solid var(--acc); border-radius: 6px; }
+.month-summary { display: block; color: inherit; text-decoration: none; }
+.month-more { display: block; margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--mut); text-align: right; }
+.cal-month { margin-top: 26px; }
+.cal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.cal-head h2 { font: 400 22px/1.05 var(--display); margin: 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 6px; justify-items: center; }
+.cal-dow { font-size: 10.5px; color: var(--fai); font-weight: 600; }
+.cal-day { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: var(--mut); border: 1px solid var(--line2); }
+.cal-day.one { background: var(--accMuted); border-color: transparent; color: var(--accInk); font-weight: 700; }
+.cal-day.many { background: var(--acc); border-color: transparent; color: var(--accInk); font-weight: 700; }
+.cal-day.future { border-color: var(--line); color: var(--fai); }
+.cal-day.today { outline: 2px solid var(--ink); outline-offset: 2px; }
 .stat-line { margin: 0; font-size: 14.5px; color: var(--ink2); }
 .avg-line { margin: 3px 0 0; display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--mut); }
 .avg-star { color: var(--accText); font-size: 12px; }

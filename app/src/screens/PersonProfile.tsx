@@ -2,10 +2,14 @@ import { useMemo } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { ProfileSummary } from '../components/ProfileSummary'
 import { RecentSections } from '../components/RecentSections'
-import { fetchLiteVisits, fetchProfiles } from '../data/social'
+import { VisitLog } from '../components/VisitLog'
+import { fetchLiteVisits, fetchProfiles, fetchVisitsBy } from '../data/social'
 import { useLoad } from '../data/useLoad'
-import { displayName, handleText, overlaps, statsFor } from '../lib/people'
+import { displayName, identityLine, overlaps, statsFor } from '../lib/people'
+import { fmtDate, money } from '../lib/stats'
+import { currencySymbol } from '../lib/types'
 
 /** specv2 §8.6 (the "others" variant): back link, title "<Name>.", identity row, stats, average, intro, overlap, recents. */
 export function PersonProfile() {
@@ -26,6 +30,8 @@ export function PersonProfile() {
     return { p, stats: statsFor(theirs), shared: overlaps(mine, theirs) }
   }, [data, userId, me])
 
+  const logs = useLoad(() => (userId ? fetchVisitsBy(userId) : Promise.resolve([])), [userId])
+
   if (userId === me) return <Navigate to="/you" replace />
 
   return (
@@ -37,24 +43,13 @@ export function PersonProfile() {
 
       {view && (
         <>
-          <h1 className="detail-name">{displayName(view.p)}<span className="dot">.</span></h1>
-          <div className="profile-id">
-            <Avatar id={view.p.id} profile={view.p} size={58} />
-            <div>
-              {handleText(view.p) && <p className="handle">{handleText(view.p)}</p>}
-              {view.p.home_city && <p className="muted small">{view.p.home_city}</p>}
-            </div>
+          <div className="title-row profile-title">
+            <h1 className="detail-name">{displayName(view.p)}<span className="dot">.</span></h1>
+            <Avatar id={view.p.id} profile={view.p} size={52} />
           </div>
-          <p className="stat-line">
-            {view.stats.cafes} {view.stats.cafes === 1 ? 'cafe' : 'cafes'} · {view.stats.visits} {view.stats.visits === 1 ? 'visit' : 'visits'} · {view.stats.cities} {view.stats.cities === 1 ? 'city' : 'cities'}
-          </p>
-          <p className="avg-line">
-            <span className="avg-star" aria-hidden="true">★</span>
-            <b>{view.stats.average ? view.stats.average.toFixed(1) : '–'}</b> average
-            {view.p.usual_order && <> · usually {view.p.usual_order}</>}
-          </p>
-          {view.p.tagline && <p className="profile-intro">{view.p.tagline}</p>}
-          {view.p.about && <p className="muted">{view.p.about}</p>}
+          <p className="people-sub">{identityLine(view.p.handle, view.p.home_city)}</p>
+          <ProfileSummary stats={view.stats} usualOrder={view.p.usual_order} tagline={view.p.tagline} />
+          {view.p.about && <p className="muted profile-about">{view.p.about}</p>}
 
           <section className="section">
             <span className="section-label">Where you overlap</span>
@@ -78,6 +73,33 @@ export function PersonProfile() {
           </section>
 
           <RecentSections userId={view.p.id} name={displayName(view.p).split(' ')[0]} />
+
+          <section className="section">
+            <span className="section-label">Recent logs</span>
+            {logs.error && <p className="error" role="alert">{logs.error}</p>}
+            {logs.data && logs.data.length === 0 && <p className="muted">No logs yet.</p>}
+            <ul className="plain-rows">
+              {(logs.data ?? []).map((v) => {
+                const sym = v.currency ? currencySymbol(v.currency).trim() : ''
+                const drink = v.visit_drinks[0]
+                return (
+                  <li key={v.id}>
+                    <div className="plain-row">
+                      <div className="row-top">
+                        <Link className="feed-cafe-name" to={`/cafes/${v.cafe_id}`}>{v.cafes.name}</Link>
+                        {v.overall != null && Number(v.overall) > 0 && <span className="row-rating"><b>{Number(v.overall).toFixed(1)}</b></span>}
+                      </div>
+                      <p className="row-meta">
+                        {fmtDate(v.visited_on)}
+                        {drink && ` · ${drink.drink_type}${drink.price != null && drink.price > 0 ? ' ' + money(Number(drink.price), sym) : ''}`}
+                      </p>
+                      <VisitLog v={v} />
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
         </>
       )}
     </main>

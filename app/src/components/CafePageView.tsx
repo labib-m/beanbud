@@ -2,9 +2,10 @@ import { Link } from 'react-router-dom'
 import type { CafeRecord } from '../data/cafes'
 import { drinkReviews, publicNotes, recentLogs, visitorCount, type CafeRating, type CafeVisit } from '../lib/cafeInfo'
 import { describeRevision, type Revision } from '../lib/history'
-import { displayName } from '../lib/people'
 import { fmtDate } from '../lib/stats'
 import { Avatar } from './Avatar'
+import { PersonLink } from './PersonLink'
+import { VisitLog } from './VisitLog'
 import { Stars } from './Stars'
 
 type Props = {
@@ -60,10 +61,11 @@ export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, on
                   <div className="plain-row">
                     <div className="feed-who">
                       <Avatar id={v.user_id} profile={v.profiles} size={30} />
-                      <span className="feed-who-text"><b>{displayName(v.profiles)}</b> <span className="muted small">{fmtDate(v.visited_on)}</span></span>
+                      <span className="feed-who-text"><PersonLink id={v.user_id} profile={v.profiles} handle /> <span className="muted small">· {fmtDate(v.visited_on)}</span></span>
                       {v.overall != null && Number(v.overall) > 0 && <span className="row-rating"><b>{Number(v.overall).toFixed(1)}</b><Stars value={Number(v.overall)} size={13} /></span>}
                     </div>
                     {drinks.length > 0 && <p className="row-meta">{drinks.join(', ')}</p>}
+                    <VisitLog v={v} />
                   </div>
                 </li>
               )
@@ -83,7 +85,7 @@ export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, on
                     <h2 className="row-name">{d.drink}</h2>
                     <span className="row-rating"><b>{d.score.toFixed(1)}</b><Stars value={d.score} size={14} /></span>
                   </div>
-                  <p className="row-meta">{displayName(d.who)} · {fmtDate(d.visitedOn)}</p>
+                  <p className="row-meta"><PersonLink id={d.userId} profile={d.who} /> · {fmtDate(d.visitedOn)}</p>
                 </div>
               </li>
             ))}
@@ -99,7 +101,7 @@ export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, on
               <li key={i + n.visitedOn}>
                 <div className="plain-row">
                   <p className="note-quote">{n.note}</p>
-                  <p className="row-meta">{displayName(n.who)} · {fmtDate(n.visitedOn)}</p>
+                  <p className="row-meta"><PersonLink id={n.userId} profile={n.who} /> · {fmtDate(n.visitedOn)}</p>
                 </div>
               </li>
             ))}
@@ -115,7 +117,7 @@ export function CafePageView({ cafe, visits, revisions, rating, myVisitCount, on
             <li key={r.id}>
               <div className="plain-row">
                 <p className="row-meta history-when">{stamp(r.changed_at)}</p>
-                <p className="history-what"><b>{r.changed_by ? displayName(r.profiles) : 'Someone'}</b> {describeRevision(r)}</p>
+                <p className="history-what">{r.changed_by ? <PersonLink id={r.changed_by} profile={r.profiles} /> : <b>Someone</b>} {describeRevision(r)}</p>
               </div>
             </li>
           ))}

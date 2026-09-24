@@ -164,20 +164,44 @@ export type Announcement = {
   created_by: string | null
 }
 
-/** One row of the Feed: a visit by anyone, without notes. */
-export type FeedVisit = {
+/** Everything about one visit that isn't private (the private note lives in its own table). */
+export type VisitDetail = {
   id: string
   user_id: string
   cafe_id: string
   visited_on: string
   created_at: string
   overall: number | null
+  score_ambiance: number | null
+  score_drinks: number | null
+  score_food: number | null
+  score_service: number | null
+  score_crowd: number | null
+  verdict: Verdict | null
   currency: string | null
+  price_band: number | null
+  spend: string | null
+  opens: string | null
+  closes: string | null
+  hours_note: string | null
+  parking: string | null
+  parking_note: string | null
+  area_note: string | null
   good_for: string[]
   amenities: string[]
   public_note: string | null
+  visit_drinks: { drink_type: string; price: number | null; score: number | null; sort_order: number }[]
+}
+
+/** The columns to select to get a VisitDetail (plus visit_drinks, which is an embed). */
+export const VISIT_DETAIL_COLUMNS =
+  'id, user_id, cafe_id, visited_on, created_at, overall, score_ambiance, score_drinks, score_food, score_service, score_crowd, ' +
+  'verdict, currency, price_band, spend, opens, closes, hours_note, parking, parking_note, area_note, good_for, amenities, public_note, ' +
+  'visit_drinks(drink_type, price, score, sort_order)'
+
+/** One row of the Feed: a visit by anyone, without private notes. */
+export type FeedVisit = VisitDetail & {
   cafes: { id: string; name: string; city: string; area: string }
-  visit_drinks: { drink_type: string; price: number | null; sort_order: number }[]
   profiles: { display_name: string | null; handle: string | null; avatar: string | null } | null
 }
 

@@ -1,12 +1,12 @@
 import { supabase } from '../lib/supabase'
 import type { RecentVisit } from '../lib/recent'
-import type { FeedVisit, LiteVisit, Profile } from '../lib/types'
+import { VISIT_DETAIL_COLUMNS, type FeedVisit, type LiteVisit, type Profile, type VisitDetail } from '../lib/types'
 
 /** Everyone's latest visits. 1000 is plenty for search and filters to work across the whole group. */
 export async function fetchFeed(limit = 1000): Promise<FeedVisit[]> {
   const { data, error } = await supabase
     .from('visits')
-    .select('id, user_id, cafe_id, visited_on, created_at, overall, currency, good_for, amenities, public_note, cafes(id, name, city, area), visit_drinks(drink_type, price, sort_order), profiles(display_name, handle, avatar)')
+    .select(`${VISIT_DETAIL_COLUMNS}, cafes(id, name, city, area), profiles(display_name, handle, avatar)`)
     .order('visited_on', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -82,4 +82,17 @@ export async function fetchRecentActivity(userId: string): Promise<RecentVisit[]
     .limit(60)
   if (error) throw new Error(error.message)
   return data as unknown as RecentVisit[]
+}
+
+/** One person's latest visits with every public detail, for the expandable logs on their profile. */
+export async function fetchVisitsBy(userId: string, limit = 20): Promise<(VisitDetail & { cafes: { id: string; name: string; city: string; area: string } })[]> {
+  const { data, error } = await supabase
+    .from('visits')
+    .select(`${VISIT_DETAIL_COLUMNS}, cafes(id, name, city, area)`)
+    .eq('user_id', userId)
+    .order('visited_on', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(error.message)
+  return data as unknown as (VisitDetail & { cafes: { id: string; name: string; city: string; area: string } })[]
 }

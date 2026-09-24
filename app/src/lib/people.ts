@@ -7,6 +7,9 @@ export function displayName(p: Namey): string {
   return p?.display_name?.trim() || (p?.handle ? '@' + p.handle : 'Someone')
 }
 export const handleText = (p: Namey) => (p?.handle ? '@' + p.handle : '')
+/** "@username · Home city", the line under a profile's title. */
+export const identityLine = (handle: string | null, city: string | null): string =>
+  [handle ? '@' + handle : '', city ?? ''].filter(Boolean).join(' · ')
 export const initial = (p: Namey) => displayName(p).replace(/^@/, '')[0]?.toUpperCase() ?? '?'
 
 // specv2 §1.3: five pastel tones, the same in both themes. A person keeps one tone regardless

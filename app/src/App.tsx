@@ -11,6 +11,7 @@ import { fetchMyProfile } from './data/social'
 import { useLoad } from './data/useLoad'
 import { emptyProfile } from './lib/people'
 import { Onboarding } from './screens/Onboarding'
+import { CalendarPage } from './screens/CalendarPage'
 import { CafeDetail } from './screens/CafeDetail'
 import { CafePublic } from './screens/CafePublic'
 import { Feed } from './screens/Feed'
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="people" element={<People />} />
           <Route path="people/:userId" element={<PersonProfile />} />
           <Route path="you" element={<You />} />
+          <Route path="calendar" element={<CalendarPage />} />
           <Route path="*" element={<Placeholder title="Not found" blurb="There's nothing at this address." />} />
         </Route>
       </Routes>

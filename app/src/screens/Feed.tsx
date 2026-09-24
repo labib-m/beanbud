@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { BrewWire } from '../components/BrewWire'
 import { Avatar } from '../components/Avatar'
+import { PersonLink } from '../components/PersonLink'
+import { VisitLog } from '../components/VisitLog'
 import { FilterBar } from '../components/FilterBar'
 import { Directory } from './Directory'
 import { Stars } from '../components/Stars'
@@ -30,7 +32,7 @@ function FeedItem({ v, featured, me, mineForCafe }: { v: FeedVisit; featured: bo
     <div className={featured ? 'featured-card' : 'plain-row'}>
       <div className="feed-who">
         <Avatar id={v.user_id} profile={v.profiles} size={featured ? 36 : 30} />
-        <span className="feed-who-text"><b>{own ? 'You' : displayName(v.profiles)}</b> <span className="muted small">{handleText(v.profiles)} · {relTime(v.created_at)}</span></span>
+        <span className="feed-who-text"><PersonLink id={v.user_id} profile={v.profiles} you handle /> <span className="muted small">· {relTime(v.created_at)}</span></span>
         {v.overall != null && <span className="row-rating"><b>{Number(v.overall).toFixed(1)}</b><Stars value={Number(v.overall)} size={13} /></span>}
       </div>
       <Link className="feed-cafe-name" to={`/cafes/${v.cafe_id}`}>{v.cafes.name}</Link>
@@ -42,15 +44,15 @@ function FeedItem({ v, featured, me, mineForCafe }: { v: FeedVisit; featured: bo
       {!own && mineForCafe != null && mineForCafe > 0 && (
         <p className="feed-compare">You gave it <b>{mineForCafe.toFixed(1)}</b> · {compareLabel(mineForCafe, Number(v.overall ?? 0))}</p>
       )}
+      <VisitLog v={v} />
     </div>
   )
 }
 
-function Activity({ sort }: { sort: Sort }) {
+function Activity({ sort, data, error, loading }: { sort: Sort; data: FeedVisit[] | null; error: string; loading: boolean }) {
   const { session } = useAuth()
   const me = session!.user.id
   const { visits: mine } = useVisits()
-  const { data, error, loading } = useLoad(() => fetchFeed(), [])
 
   // The same four controls as the Notebook. The search reaches every person's entries; the quick
   // filters are still YOUR most-used tags, drinks and amenities, applied to everyone's visits.
@@ -104,10 +106,8 @@ function Activity({ sort }: { sort: Sort }) {
         onToggle={(cat, label) => setSel((cur) => toggleSelected(cur, cat, label))}
         onClearChips={() => setSel(emptySelection())}
       />
-      <p className="result-count">
-        {loading ? 'Loading…' : rows.length === 0 ? '' : matched.length === rows.length ? `${rows.length} ${rows.length === 1 ? 'visit' : 'visits'}` : `${matched.length} of ${rows.length} visits`}
-        {matched.length > SHOW_AT_MOST && ` · showing the first ${SHOW_AT_MOST}. Narrow it with a search or filter.`}
-      </p>
+      {loading && <p className="muted">Loading…</p>}
+      {matched.length > SHOW_AT_MOST && <p className="result-count">Showing the first {SHOW_AT_MOST}. Narrow it with a search or filter.</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {data && data.length === 0 && <p className="muted">Nothing here yet. Log a visit to get it started.</p>}
       {data && data.length > 0 && matched.length === 0 && <p className="muted">No visits match. Clear the search, the city, the neighbourhood or the quick filters.</p>}
@@ -154,6 +154,8 @@ export function Feed() {
   const param = params.get('tab')
   const tab: FeedTab = param === 'top' ? 'score' : param === 'directory' ? 'directory' : param === 'wire' ? 'wire' : 'recent'
   const { unreadCount } = useBrewWire()
+  const { data, error, loading } = useLoad(() => fetchFeed(), [])
+  const cafeCount = useMemo(() => new Set((data ?? []).map((v) => v.cafe_id)).size, [data])
 
   function go(t: FeedTab) {
     const value = TAB_PARAM[t]
@@ -162,7 +164,10 @@ export function Feed() {
 
   return (
     <main className="screen">
-      <h1 className="title">Feed<span className="dot">.</span></h1>
+      <div className="title-row">
+        <h1 className="title">Feed<span className="dot">.</span></h1>
+        {data && <p className="title-tally">{cafeCount} {cafeCount === 1 ? 'cafe' : 'cafes'} · {data.length} {data.length === 1 ? 'visit' : 'visits'}</p>}
+      </div>
       <p className="people-sub">{SUBTITLE[tab]}</p>
       <ViewTabs
         label="Feed view" value={tab} onChange={go}
@@ -173,7 +178,7 @@ export function Feed() {
           { key: 'wire', label: 'Brew Wire', badge: unreadCount },
         ]}
       />
-      {(tab === 'recent' || tab === 'score') && <Activity sort={tab} />}
+      {(tab === 'recent' || tab === 'score') && <Activity sort={tab} data={data} error={error} loading={loading} />}
       {tab === 'directory' && <Directory />}
       {tab === 'wire' && <BrewWire />}
     </main>

@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
+import { PersonLink } from '../components/PersonLink'
 import { Stars } from '../components/Stars'
 import { fetchCafePage } from '../data/cafes'
 import { useLoad } from '../data/useLoad'
 import { useVisits } from '../data/VisitsProvider'
 import { friendsAt, visitorCount } from '../lib/cafeInfo'
-import { displayName } from '../lib/people'
 import { relativeDate } from '../lib/segments'
 import { criteria, criterion, drinkStats, fmtDate, groupByCafe, money, todayLocal, trend, type CafeGroup } from '../lib/stats'
 import { PRICE_BANDS, VERDICTS, currencySymbol, noteOf, scoreOf, type Cafe, type FullVisit } from '../lib/types'
@@ -44,7 +44,7 @@ function FriendRow({ f }: { f: ReturnType<typeof friendsAt>[number] }) {
     <li className="friend-row">
       <Avatar id={f.userId} profile={f.who} size={30} />
       <div className="friend-body">
-        <b>{displayName(f.who)}</b>
+        <PersonLink id={f.userId} profile={f.who} handle />
         <span className="muted small">{f.visits} {f.visits === 1 ? 'visit' : 'visits'}</span>
       </div>
       <span className="friend-rating"><b>{f.average ? f.average.toFixed(1) : '–'}</b><Stars value={f.average} size={13} /></span>

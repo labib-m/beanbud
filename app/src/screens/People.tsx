@@ -26,7 +26,10 @@ export function People() {
 
   return (
     <main className="screen">
-      <h1 className="title">People<span className="dot">.</span></h1>
+      <div className="title-row">
+        <h1 className="title">People<span className="dot">.</span></h1>
+        {data && <p className="title-tally">{data.profiles.length} {data.profiles.length === 1 ? 'addict' : 'addicts'}</p>}
+      </div>
       <p className="people-sub">{loading ? 'Loading…' : 'Fellow Caffeiners'}</p>
       {error && <p className="error" role="alert">{error}</p>}
       <ul className="plain-rows">

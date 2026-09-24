@@ -16,23 +16,22 @@ type Props = {
   onClearChips: () => void
 }
 
-const COPY = {
-  notebook: { placeholder: 'Search your notebook: cafe, drink or note', hint: 'Searching only your own entries' },
-  everyone: { placeholder: "Search everyone: cafe, drink, note or person", hint: '' },
+const PLACEHOLDER = {
+  notebook: 'Search your notebook: cafe, drink or note',
+  everyone: 'Search everyone: cafe, drink, note or person',
 }
 
 /** The same controls on the Notebook and the Feed (specv2 §7 Filter row). Only the reach of the search differs. Sorting lives in the view tabs above. */
 export function FilterBar({ scope, q, onQ, city, onCity, cities, area, onArea, areas, presets, selected, onToggle, onClearChips }: Props) {
-  const copy = COPY[scope]
+  const placeholder = PLACEHOLDER[scope]
   const chips = CATEGORIES.flatMap((cat) => presets[cat].map((label) => ({ cat, label })))
   return (
     <div className="controls">
       <div className="search-field">
         <span className="search-icon" aria-hidden="true">⌕</span>
-        <input className="search-input" type="search" placeholder={copy.placeholder} aria-label={copy.placeholder} value={q} onChange={(e) => onQ(e.target.value)} />
+        <input className="search-input" type="search" placeholder={placeholder} aria-label={placeholder} value={q} onChange={(e) => onQ(e.target.value)} />
         {q && <button type="button" className="search-clear" onClick={() => onQ('')}>Clear</button>}
       </div>
-      {copy.hint && <p className={`scope-hint ${scope}`}>{copy.hint}</p>}
       <div className="filter-row">
         <span className="filter-pill-wrap">
           <select className="filter-pill" aria-label="City" value={city} onChange={(e) => { onCity(e.target.value); onArea('') }}>
