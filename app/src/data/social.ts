@@ -49,7 +49,7 @@ export async function updateProfile(id: string, edit: ProfileEdit): Promise<void
 export async function fetchMyProfile(id: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, display_name, handle, home_city, tagline, usual_order, about, avatar')
+    .select('id, display_name, handle, home_city, tagline, usual_order, about, avatar, is_admin')
     .eq('id', id)
     .maybeSingle()
   if (error) throw new Error(error.message)

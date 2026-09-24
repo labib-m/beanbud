@@ -427,7 +427,7 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
           )}
 
           <button type="button" className="btn primary" onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : isNewCafe ? 'Enlist new cafe and log entry' : editing ? 'Save changes' : 'Save visit'}
+            {saving ? 'Saving…' : isNewCafe ? 'Enlist new cafe and log entry' : editing ? 'Update the Brew' : 'Brew it'}
           </button>
           {!editing && <p className="save-note">A name and five taps is a complete visit.</p>}
 

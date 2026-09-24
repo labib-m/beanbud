@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
+import { AnnouncementBanner } from '../components/AnnouncementBanner'
 import { Avatar } from '../components/Avatar'
 import { FilterBar } from '../components/FilterBar'
 import { Directory } from './Directory'
@@ -149,6 +150,7 @@ export function Feed() {
           <button role="tab" aria-selected={tab === 'directory'} onClick={() => go('directory')}>Directory</button>
         </div>
       </div>
+      <AnnouncementBanner />
       {tab === 'activity' && <p className="people-sub">Where others bean</p>}
       {tab === 'directory' ? <Directory /> : <Activity />}
     </main>

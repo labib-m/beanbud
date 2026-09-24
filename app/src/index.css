@@ -443,3 +443,11 @@ textarea.input.area.short { min-height: 70px; }
 .activity-labels { display: grid; margin-top: 7px; font-size: 10.5px; color: var(--fai); }
 .activity-label.today { font-weight: 700; color: var(--accText); text-align: center; }
 .activity-label.last { text-align: right; }
+
+/* ---- Developer announcements ---- */
+.announcement-banner { display: flex; gap: 12px; align-items: flex-start; background: var(--surf); border: 1px solid var(--line2); border-radius: 20px; padding: 14px 16px; margin: 14px 0; }
+.announcement-banner .announcement-body { flex: 1; min-width: 0; }
+.announcement-title { margin: 0; font-weight: 700; font-size: 14px; color: var(--ink); }
+.announcement-text { margin: 4px 0 0; font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.announcement-dismiss { flex: none; background: none; border: 0; color: var(--fai); font-size: 18px; line-height: 1; cursor: pointer; padding: 2px; }
+.admin-zone { margin-top: 10px; padding-top: 16px; border-top: 1px dashed var(--line2); display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }

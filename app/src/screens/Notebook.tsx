@@ -103,7 +103,7 @@ export function Notebook() {
         <div className="empty">
           <h2 className="empty-headline">Nothing here yet.</h2>
           <p className="empty-sub">Start with the last cafe you sat in. A name, a city and a few ratings is enough.</p>
-          <button className="btn primary" onClick={() => openLog()}>Log your first visit</button>
+          <button className="btn primary" onClick={() => openLog()}>Log your first brew</button>
           <Link className="text-link" to="/feed">See where your friends have been</Link>
         </div>
       )}

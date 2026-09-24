@@ -151,6 +151,17 @@ export type Profile = {
   usual_order: string | null
   about: string | null
   avatar: string | null
+  // Only ever fetched for your OWN profile (fetchMyProfile) — nobody else's is_admin is exposed.
+  is_admin?: boolean
+}
+
+/** One post in the developer announcements feed. */
+export type Announcement = {
+  id: string
+  title: string
+  body: string | null
+  created_at: string
+  created_by: string | null
 }
 
 /** One row of the Feed: a visit by anyone, without notes. */

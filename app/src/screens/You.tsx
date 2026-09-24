@@ -1,12 +1,13 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
+import { AnnouncementComposer } from '../components/AnnouncementComposer'
 import { Avatar } from '../components/Avatar'
 import { MonthActivityStrip } from '../components/MonthActivityStrip'
 import { RecentSections } from '../components/RecentSections'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { NotificationsToggle } from '../components/NotificationsToggle'
 import { deleteAccount } from '../data/auth'
-import { fetchLiteVisits, fetchProfiles, updateProfile, type ProfileEdit } from '../data/social'
+import { fetchLiteVisits, fetchMyProfile, updateProfile, type ProfileEdit } from '../data/social'
 import { useLoad } from '../data/useLoad'
 import { SetPin } from './SetPin'
 import { displayName, emptyProfile, handleText, statsFor } from '../lib/people'
@@ -18,9 +19,9 @@ export function You() {
   const me = session!.user.id
   const [tick, setTick] = useState(0)
   const { data, error, loading } = useLoad(async () => {
-    const [profiles, visits] = await Promise.all([fetchProfiles(), fetchLiteVisits()])
+    const [profile, visits] = await Promise.all([fetchMyProfile(me), fetchLiteVisits()])
     const mine = visits.filter((v) => v.user_id === me)
-    return { profile: profiles.find((p) => p.id === me) ?? emptyProfile(me), stats: statsFor(mine), mine }
+    return { profile: profile ?? emptyProfile(me), stats: statsFor(mine), mine }
   }, [me, tick])
   const [editing, setEditing] = useState(false)
   const [changingPin, setChangingPin] = useState(false)
@@ -81,6 +82,7 @@ export function You() {
           )}
 
           <NotificationsToggle />
+          {data.profile.is_admin && <AnnouncementComposer />}
           <p className="muted spaced">Other people see your name, username and these details. Your notes stay private.</p>
           <div className="row-btns">
             <button className="btn ghost" onClick={() => setEditing(true)}>Edit profile</button>

@@ -225,7 +225,7 @@ export function CafeDetail() {
 
       {group && (
         <section className="section">
-          <span className="section-label">Your visits</span>
+          <span className="section-label">Your brews here</span>
           <ul className="plain-rows">
             {[...group.visits].reverse().map((v) => (
               <VisitLogRow key={v.id} v={v} open={openVisit === v.id} onToggle={() => setOpenVisit(openVisit === v.id ? null : v.id)} onEdit={() => openEdit(v)} />
