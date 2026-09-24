@@ -30,7 +30,7 @@ export function People() {
         <h1 className="title">People<span className="dot">.</span></h1>
         {data && <p className="title-tally">{data.profiles.length} {data.profiles.length === 1 ? 'addict' : 'addicts'}</p>}
       </div>
-      <p className="people-sub">{loading ? 'Loading…' : 'Fellow Caffeiners'}</p>
+      <p className="people-sub">{loading ? 'Loading…' : 'Fellow caffeiners'}</p>
       {error && <p className="error" role="alert">{error}</p>}
       <ul className="plain-rows">
         {rows.map(({ p, s }) => (
