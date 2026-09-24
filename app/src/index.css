@@ -478,3 +478,16 @@ textarea.input.area.short { min-height: 70px; }
 .history-when { margin: 0; }
 .history-what { margin: 3px 0 0; font-size: 13.5px; color: var(--ink2); }
 .history-what b { color: var(--ink); }
+
+/* ---- pull to refresh ---- */
+.ptr {
+  position: fixed; left: 50%; top: calc(-44px + env(safe-area-inset-top)); z-index: 20;
+  display: flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px;
+  background: var(--surf2); border: 1px solid var(--line2); color: var(--ink);
+  font-size: 12.5px; font-weight: 600; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35); pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.ptr.dragging { transition: none; }
+.ptr-icon { display: inline-block; color: var(--acc); font-size: 15px; line-height: 1; }
+.ptr-icon.spin { animation: ptr-spin 0.8s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }

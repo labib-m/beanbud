@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Outlet, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthProvider'
 import { AddToHomeScreenGuide } from './components/AddToHomeScreenGuide'
+import { PullToRefresh } from './components/PullToRefresh'
 import { NotificationsBanner } from './components/NotificationsBanner'
 import { TabBar } from './components/TabBar'
 import { WireBanner } from './components/WireBanner'
@@ -70,10 +71,10 @@ function Shell() {
 export default function App() {
   const { session, loading } = useAuth()
 
-  if (loading) return <main className="screen center"><p className="muted">Loading…</p></main>
-  if (!session) return <SignIn />
-
-  return (
+  let page: ReactNode
+  if (loading) page = <main className="screen center"><p className="muted">Loading…</p></main>
+  else if (!session) page = <SignIn />
+  else page = (
     <ProfileGate
       userId={session.user.id}
       hasPin={session.user.app_metadata?.has_pin === true}
@@ -98,4 +99,6 @@ export default function App() {
     </VisitsProvider>
     </ProfileGate>
   )
+
+  return <><PullToRefresh />{page}</>
 }
