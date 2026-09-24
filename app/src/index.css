@@ -419,6 +419,8 @@ textarea.input.area.short { min-height: 70px; }
 /* ---- Profile: You and others (specv2 §8.6) ---- */
 .title-row.profile-title { align-items: center; }
 .title-row.profile-title h1 { min-width: 0; }
+.title-row.profile-title .avatar { margin: -6px 0; }
+.title-row.profile-title + .people-sub { min-height: 1.5em; }
 .profile-stats { text-align: center; margin: 4px 0 8px; }
 .profile-stats .avg-line { justify-content: center; }
 .profile-stats .profile-intro { margin-top: 12px; }
