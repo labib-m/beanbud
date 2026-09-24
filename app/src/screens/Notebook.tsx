@@ -97,6 +97,7 @@ export function Notebook() {
         <h1 className="title">Notebook<span className="dot">.</span></h1>
         <p className="title-tally">{groups.length} {groups.length === 1 ? 'cafe' : 'cafes'} · {visits.length} {visits.length === 1 ? 'visit' : 'visits'}</p>
       </div>
+      <p className="people-sub">Your personal grind</p>
 
       {error && <p className="error" role="alert">{error}</p>}
 
