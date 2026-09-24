@@ -20,6 +20,11 @@ export async function setReaction(visitId: string, kind: ReactionKind | null): P
     if (error) throw friendly(error)
     return
   }
-  const { error } = await supabase.from('reactions').upsert({ visit_id: visitId, kind }, { onConflict: 'visit_id,user_id' })
+  // Change your existing reaction if you have one, otherwise add it. (An upsert would also try to
+  // rewrite visit_id, which the database rightly doesn't let anyone change.)
+  const { data, error } = await supabase.from('reactions').update({ kind }).eq('visit_id', visitId).select('visit_id')
   if (error) throw friendly(error)
+  if (data.length > 0) return
+  const { error: insertError } = await supabase.from('reactions').insert({ visit_id: visitId, kind })
+  if (insertError && insertError.code !== '23505') throw friendly(insertError)
 }

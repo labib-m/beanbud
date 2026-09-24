@@ -1,13 +1,16 @@
 // Bean Bud — send-push: notify everyone (except the author) when a visit is logged or edited,
 // notify everyone (except the poster) when a new Brew Wire announcement goes out, and notify
-// only the admin when someone sends a message through You → Contact.
+// only the admin when someone sends a message through You → Contact, and notify the owner of a
+// log when someone reacts to it.
 //
-// This function does not run on a schedule and nothing in the app calls it directly. THREE
+// This function does not run on a schedule and nothing in the app calls it directly. Up to FOUR
 // Database Webhooks (Database → Webhooks in the Supabase dashboard) call it automatically:
 //   1. INSERT or UPDATE on "visits"
 //   2. INSERT on "announcements"
 //   3. INSERT on "support_messages"
-// all pointed at this same function, with the same "x-webhook-secret" header.
+//   4. INSERT on "reactions"
+// all pointed at this same function, with the same "x-webhook-secret" header. Each one is
+// independent: a table with no webhook simply sends nothing.
 //
 // Deploy with "Verify JWT" switched OFF, same reason as pin-auth: the webhook is not a signed-in
 // user, it is Supabase's own server calling in. Instead this function checks a shared secret
@@ -67,10 +70,22 @@ export function supportNotification(who: string, text: string) {
   return { title: 'New message', body: `${who}: ${preview}`, url: '/feed?tab=wire&inbox=1' }
 }
 
+const REACTION_LINES: Record<string, (who: string, cafe: string) => string> = {
+  love: (who, cafe) => `❤️ ${who} loved your log at ${cafe}`,
+  question: (who, cafe) => `❓ ${who} has a question about your log at ${cafe}`,
+  dislike: (who, cafe) => `👎 ${who} disliked your log at ${cafe}`,
+}
+
+/** The notification the owner of a log gets when someone reacts to it. Null for an unknown reaction. */
+export function reactionNotification(kind: string, who: string, cafeName: string) {
+  const line = REACTION_LINES[kind]
+  return line ? { title: HEADER, body: line(who, cafeName), url: '/feed' } : null
+}
+
 type WebhookBody = {
   type?: string
   table?: string
-  record?: { id?: string; user_id?: string; cafe_id?: string; title?: string; body?: string | null; created_by?: string }
+  record?: { id?: string; user_id?: string; cafe_id?: string; title?: string; body?: string | null; created_by?: string; visit_id?: string; kind?: string }
 }
 
 async function handle(req: Request): Promise<Response> {
@@ -123,6 +138,19 @@ async function handle(req: Request): Promise<Response> {
     const adminIds = (admins ?? []).map((a: { id: string }) => a.id)
     if (adminIds.length === 0) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 })
     return await broadcast(db, supportNotification(authorName(sender ?? null), record.body), undefined, adminIds)
+  }
+
+  if (body.table === 'reactions' && body.type === 'INSERT' && record?.visit_id && record.user_id && record.kind) {
+    const { data: visit } = await db.from('visits').select('user_id, cafes(name)').eq('id', record.visit_id).maybeSingle()
+    const owner = (visit as { user_id?: string } | null)?.user_id
+    // Reacting to your own log tells nobody anything.
+    if (!visit || !owner || owner === record.user_id) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 })
+    const { data: reactor } = await db.from('profiles').select('display_name, handle').eq('id', record.user_id).maybeSingle()
+    const cafes = (visit as { cafes?: { name?: string } | { name?: string }[] | null }).cafes
+    const cafeName = (Array.isArray(cafes) ? cafes[0]?.name : cafes?.name) ?? 'a cafe'
+    const message = reactionNotification(record.kind, authorName(reactor ?? null), cafeName)
+    if (!message) return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 })
+    return await broadcast(db, message, undefined, [owner])
   }
 
   return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 })
