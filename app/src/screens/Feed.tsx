@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
-import { AnnouncementBanner } from '../components/AnnouncementBanner'
+import { BrewWire } from '../components/BrewWire'
 import { Avatar } from '../components/Avatar'
 import { FilterBar } from '../components/FilterBar'
 import { Directory } from './Directory'
 import { Stars } from '../components/Stars'
 import { useVisits } from '../data/VisitsProvider'
+import { fetchAnnouncements } from '../data/announcements'
 import { fetchFeed } from '../data/social'
 import { useLoad } from '../data/useLoad'
+import { isUnread, sortNewest } from '../lib/announcements'
 import { displayName, handleText, relTime } from '../lib/people'
 import { groupByCafe, money, todayLocal } from '../lib/stats'
 import { currencySymbol, type FeedVisit } from '../lib/types'
@@ -16,6 +18,14 @@ import { citiesOf, compareLabel, filterAndSort, type FeedRow } from '../lib/feed
 import { emptySelection, SORT_OPTIONS, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
 import { featuresOf } from '../lib/visitFeatures'
 import { segmentByDay, type DateBlock } from '../lib/segments'
+
+const WIRE_SEEN_KEY = 'bb-wire-lastseen'
+function readLastSeenWire(): string | null {
+  try { return localStorage.getItem(WIRE_SEEN_KEY) } catch { return null }
+}
+function rememberLastSeenWire(id: string) {
+  try { localStorage.setItem(WIRE_SEEN_KEY, id) } catch { /* private mode: the dot just reappears next time */ }
+}
 
 const SHOW_AT_MOST = 100
 
@@ -138,8 +148,20 @@ function Activity() {
 
 export function Feed() {
   const [params, setParams] = useSearchParams()
-  const tab = params.get('tab') === 'directory' ? 'directory' : 'activity'
-  const go = (t: 'activity' | 'directory') => setParams(t === 'directory' ? { tab: 'directory' } : {}, { replace: true })
+  const tabParam = params.get('tab')
+  const tab = tabParam === 'directory' ? 'directory' : tabParam === 'wire' ? 'wire' : 'activity'
+
+  const [announcements, setAnnouncements] = useState<Awaited<ReturnType<typeof fetchAnnouncements>>>([])
+  const [lastSeenWire, setLastSeenWire] = useState(() => readLastSeenWire())
+  useEffect(() => { fetchAnnouncements().then(setAnnouncements).catch(() => {}) }, [])
+
+  function go(t: 'activity' | 'directory' | 'wire') {
+    if (t === 'wire') {
+      const newest = sortNewest(announcements)[0]
+      if (newest) { rememberLastSeenWire(newest.id); setLastSeenWire(newest.id) }
+    }
+    setParams(t === 'activity' ? {} : { tab: t }, { replace: true })
+  }
 
   return (
     <main className="screen">
@@ -148,11 +170,15 @@ export function Feed() {
         <div className="seg" role="tablist" aria-label="Feed view">
           <button role="tab" aria-selected={tab === 'activity'} onClick={() => go('activity')}>Activity</button>
           <button role="tab" aria-selected={tab === 'directory'} onClick={() => go('directory')}>Directory</button>
+          <button role="tab" aria-selected={tab === 'wire'} onClick={() => go('wire')}>
+            Brew Wire{isUnread(announcements, lastSeenWire) && <span className="seg-dot" aria-label="New" />}
+          </button>
         </div>
       </div>
-      <AnnouncementBanner />
       {tab === 'activity' && <p className="people-sub">Where others bean</p>}
-      {tab === 'directory' ? <Directory /> : <Activity />}
+      {tab === 'directory' && <Directory />}
+      {tab === 'activity' && <Activity />}
+      {tab === 'wire' && <BrewWire list={announcements} />}
     </main>
   )
 }

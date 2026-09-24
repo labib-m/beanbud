@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { postAnnouncement } from '../data/announcements'
 
-/** Admin-only (the caller checks profile.is_admin before rendering this). Posts to everyone's Feed. */
+/** Admin-only (the caller checks profile.is_admin before rendering this). Posts to everyone's Brew Wire. */
 export function AnnouncementComposer() {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
@@ -31,9 +31,9 @@ export function AnnouncementComposer() {
     <div className="admin-zone">
       <p className="section-label">Admin</p>
       <button type="button" className="btn ghost" onClick={() => { setOpen((o) => !o); setSent(false) }}>
-        {open ? 'Cancel' : 'Post an announcement'}
+        {open ? 'Cancel' : 'Post to Brew Wire'}
       </button>
-      {sent && <p className="muted small">Sent — everyone will see it at the top of their Feed.</p>}
+      {sent && <p className="muted small">Sent — everyone will see it on the Brew Wire.</p>}
       {open && (
         <div className="stack">
           {err && <p className="error small" role="alert">{err}</p>}

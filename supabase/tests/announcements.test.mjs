@@ -2,22 +2,23 @@
 // Run:  node --test supabase/tests/announcements.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { nextToShow } from '../../app/src/lib/announcements.ts'
+import { sortNewest, isUnread } from '../../app/src/lib/announcements.ts'
 
 const a = (id, date) => ({ id, created_at: date })
 
-test('nextToShow: the newest one not yet dismissed', () => {
+test('sortNewest: newest first', () => {
   const list = [a('1', '2026-09-01'), a('2', '2026-09-10'), a('3', '2026-09-05')]
-  assert.equal(nextToShow(list, []).id, '2')
+  assert.deepEqual(sortNewest(list).map((x) => x.id), ['2', '3', '1'])
 })
 
-test('nextToShow: skips dismissed ones, still picking the newest of what remains', () => {
-  const list = [a('1', '2026-09-01'), a('2', '2026-09-10'), a('3', '2026-09-05')]
-  assert.equal(nextToShow(list, ['2']).id, '3')
+test('isUnread: true when the newest id differs from what was last seen', () => {
+  const list = [a('1', '2026-09-01'), a('2', '2026-09-10')]
+  assert.equal(isUnread(list, '1'), true)
+  assert.equal(isUnread(list, null), true)
 })
 
-test('nextToShow: null once everything has been dismissed, or there is nothing at all', () => {
-  const list = [a('1', '2026-09-01')]
-  assert.equal(nextToShow(list, ['1']), null)
-  assert.equal(nextToShow([], []), null)
+test('isUnread: false once the newest one has been seen, or there is nothing at all', () => {
+  const list = [a('1', '2026-09-01'), a('2', '2026-09-10')]
+  assert.equal(isUnread(list, '2'), false)
+  assert.equal(isUnread([], null), false)
 })

@@ -1,8 +1,11 @@
-// Bean Bud — send-push: notify everyone (except the author) when a visit is logged or edited.
+// Bean Bud — send-push: notify everyone (except the author) when a visit is logged or edited,
+// and notify everyone (except the poster) when a new Brew Wire announcement goes out.
 //
-// This function does not run on a schedule and nothing in the app calls it directly. A
-// Database Webhook (Database → Webhooks in the Supabase dashboard) calls it automatically
-// after every INSERT or UPDATE on the "visits" table, with the new row in the request body.
+// This function does not run on a schedule and nothing in the app calls it directly. TWO
+// Database Webhooks (Database → Webhooks in the Supabase dashboard) call it automatically:
+//   1. INSERT or UPDATE on "visits"
+//   2. INSERT on "announcements"
+// both pointed at this same function, with the same "x-webhook-secret" header.
 //
 // Deploy with "Verify JWT" switched OFF, same reason as pin-auth: the webhook is not a signed-in
 // user, it is Supabase's own server calling in. Instead this function checks a shared secret
@@ -50,10 +53,15 @@ export function notificationFor(kind: NotifyKind, cafe: { id: string; name: stri
   return { title: HEADER, body: `${who} ${verb} ${cafe.name}`, url: `/cafes/${cafe.id}` }
 }
 
+/** The notification everyone but the poster gets when a new Brew Wire announcement goes out. */
+export function announcementNotification(a: { title: string; body: string | null }) {
+  return { title: HEADER, body: a.title, url: '/feed?tab=wire' }
+}
+
 type WebhookBody = {
   type?: string
   table?: string
-  record?: { id?: string; user_id?: string; cafe_id?: string }
+  record?: { id?: string; user_id?: string; cafe_id?: string; title?: string; body?: string | null; created_by?: string }
 }
 
 async function handle(req: Request): Promise<Response> {
@@ -80,32 +88,43 @@ async function handle(req: Request): Promise<Response> {
     return new Response('bad json', { status: 400 })
   }
 
-  if (body.table !== 'visits' || (body.type !== 'INSERT' && body.type !== 'UPDATE')) {
-    return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 })
-  }
+  const db = admin()
   const record = body.record
-  if (!record?.id || !record.user_id || !record.cafe_id) {
-    return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 })
+
+  if (body.table === 'visits' && (body.type === 'INSERT' || body.type === 'UPDATE') && record?.id && record.user_id && record.cafe_id) {
+    const [{ data: cafe }, { data: author }] = await Promise.all([
+      db.from('cafes').select('id, name').eq('id', record.cafe_id).maybeSingle(),
+      db.from('profiles').select('display_name, handle').eq('id', record.user_id).maybeSingle(),
+    ])
+    if (!cafe) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 })
+    const message = notificationFor(body.type as NotifyKind, cafe, authorName(author ?? null))
+    return await broadcast(db, message, record.user_id)
   }
 
-  const db = admin()
-  const [{ data: cafe }, { data: author }, { data: subs, error: subsError }] = await Promise.all([
-    db.from('cafes').select('id, name').eq('id', record.cafe_id).maybeSingle(),
-    db.from('profiles').select('display_name, handle').eq('id', record.user_id).maybeSingle(),
-    db.from('push_subscriptions').select('id, endpoint, p256dh_key, auth_key').neq('user_id', record.user_id),
-  ])
+  if (body.table === 'announcements' && body.type === 'INSERT' && record?.id && record.title) {
+    const message = announcementNotification({ title: record.title, body: record.body ?? null })
+    return await broadcast(db, message, record.created_by)
+  }
+
+  return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 })
+}
+
+/** Sends one message to every subscribed device except (optionally) the person who caused it. */
+async function broadcast(db: ReturnType<typeof admin>, message: unknown, exceptUserId?: string) {
+  let q = db.from('push_subscriptions').select('id, endpoint, p256dh_key, auth_key')
+  if (exceptUserId) q = q.neq('user_id', exceptUserId)
+  const { data: subs, error: subsError } = await q
 
   if (subsError) { console.error('send-push: could not read subscriptions', subsError.message); return new Response(JSON.stringify({ ok: false }), { status: 200 }) }
-  if (!cafe || !subs || subs.length === 0) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 })
+  if (!subs || subs.length === 0) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 })
 
-  const message = JSON.stringify(notificationFor(body.type as NotifyKind, cafe, authorName(author ?? null)))
-
+  const payload = JSON.stringify(message)
   let sent = 0
   const gone: string[] = []
   await Promise.all(
     (subs as { id: string; endpoint: string; p256dh_key: string; auth_key: string }[]).map(async (s) => {
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh_key, auth: s.auth_key } }, message)
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh_key, auth: s.auth_key } }, payload)
         sent++
       } catch (err) {
         const status = (err as { statusCode?: number })?.statusCode

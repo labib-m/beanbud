@@ -234,8 +234,10 @@ textarea.input.area.short { min-height: 70px; }
 
 /* ---- feed tabs, directory, public cafe page ---- */
 .seg { display: inline-flex; background: var(--surf); border-radius: 999px; padding: 4px; margin: 4px 0 14px; }
-.seg button { font: inherit; font-weight: 600; font-size: 13px; border: 0; background: transparent; color: var(--mut); padding: 8px 18px; border-radius: 999px; cursor: pointer; }
+.seg button { position: relative; font: inherit; font-weight: 600; font-size: 13px; border: 0; background: transparent; color: var(--mut); padding: 8px 18px; border-radius: 999px; cursor: pointer; }
 .seg button[aria-selected='true'] { background: var(--acc); color: var(--accInk); }
+.seg-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--acc); }
+.seg button[aria-selected='true'] .seg-dot { background: var(--accInk); }
 .dir-count { margin: 8px 2px 10px; }
 .dir-group { margin-bottom: 14px; }
 .dir-letter { position: sticky; top: 0; z-index: 1; margin: 0 0 8px; padding: 4px 6px; font: 400 17px/1.1 var(--display); background: var(--bg); color: var(--acc); }
@@ -425,12 +427,9 @@ textarea.input.area.short { min-height: 70px; }
 .activity-label.today { font-weight: 700; color: var(--accText); text-align: center; }
 .activity-label.last { text-align: right; }
 
-/* ---- Developer announcements ---- */
-.announcement-banner { display: flex; gap: 12px; align-items: flex-start; background: var(--surf); border: 1px solid var(--line2); border-radius: 20px; padding: 14px 16px; margin: 14px 0; }
-.announcement-banner .announcement-body { flex: 1; min-width: 0; }
+/* ---- Brew Wire (developer announcements) ---- */
 .announcement-title { margin: 0; font-weight: 700; font-size: 14px; color: var(--ink); }
 .announcement-text { margin: 4px 0 0; font-size: 13px; color: var(--ink2); line-height: 1.5; }
-.announcement-dismiss { flex: none; background: none; border: 0; color: var(--fai); font-size: 18px; line-height: 1; cursor: pointer; padding: 2px; }
 .admin-zone { margin-top: 10px; padding-top: 16px; border-top: 1px dashed var(--line2); display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 
 /* ---- Public cafe page (specv2 visual language, applied here too) ---- */
