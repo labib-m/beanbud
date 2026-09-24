@@ -1,7 +1,7 @@
 // Tests searching, filtering and sorting everyone's visits.  Run: node --test supabase/tests/feed_filter.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { filterAndSort, citiesOf, compareLabel } from '../../app/src/lib/feedFilter.ts'
+import { filterAndSort, citiesOf, areasOf, compareLabel } from '../../app/src/lib/feedFilter.ts'
 import { emptySelection, toggleSelected } from '../../app/src/lib/filters.ts'
 
 let n = 0
@@ -36,6 +36,17 @@ test('city filter is exact, and combines with search', () => {
   const rows = [row({ id: 'd1', city: 'Dhaka' }), row({ id: 'b1', city: 'Bangkok', cafeName: 'Arabica' })]
   assert.deepEqual(ids(filterAndSort(rows, q({ city: 'Bangkok' }))), ['b1'])
   assert.deepEqual(filterAndSort(rows, q({ city: 'Bangkok', q: 'dose' })), [])
+})
+
+test('neighbourhood filter is exact and combines with city; the menu follows the chosen city', () => {
+  const rows = [
+    row({ id: 'a', city: 'Dhaka', area: 'Banani' }), row({ id: 'b', city: 'Dhaka', area: 'Gulshan' }),
+    row({ id: 'c', city: 'Sylhet', area: 'Banani' }), row({ id: 'd', city: 'Dhaka', area: '' }),
+  ]
+  assert.deepEqual(ids(filterAndSort(rows, q({ area: 'Banani' }))).sort(), ['a', 'c'])
+  assert.deepEqual(ids(filterAndSort(rows, q({ city: 'Dhaka', area: 'Banani' }))), ['a'])
+  assert.deepEqual(areasOf(rows), ['Banani', 'Gulshan'])
+  assert.deepEqual(areasOf(rows, 'Sylhet'), ['Banani'])
 })
 
 test('preset chips filter everyone\'s visits (any within a group, all across groups)', () => {

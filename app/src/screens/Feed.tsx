@@ -14,7 +14,7 @@ import { useLoad } from '../data/useLoad'
 import { displayName, handleText, relTime } from '../lib/people'
 import { groupByCafe, money, todayLocal } from '../lib/stats'
 import { currencySymbol, type FeedVisit } from '../lib/types'
-import { citiesOf, compareLabel, filterAndSort, type FeedRow } from '../lib/feedFilter'
+import { areasOf, citiesOf, compareLabel, filterAndSort, type FeedRow } from '../lib/feedFilter'
 import { emptySelection, SORT_TAB_LABEL, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
 import { featuresOf } from '../lib/visitFeatures'
 import { segmentByDay, type DateBlock } from '../lib/segments'
@@ -56,6 +56,7 @@ function Activity({ sort }: { sort: Sort }) {
   // filters are still YOUR most-used tags, drinks and amenities, applied to everyone's visits.
   const [q, setQ] = useState('')
   const [city, setCity] = useState('')
+  const [area, setArea] = useState('')
   const [sel, setSel] = useState<Selected>(emptySelection)
   const presets = useMemo(() => topPresets((mine ?? []).map(featuresOf)), [mine])
 
@@ -70,7 +71,8 @@ function Activity({ sort }: { sort: Sort }) {
   )
   const byId = useMemo(() => new Map((data ?? []).map((v) => [v.id, v])), [data])
   const cities = useMemo(() => citiesOf(rows), [rows])
-  const matched = useMemo(() => filterAndSort(rows, { q, city, sel, sort }), [rows, q, city, sel, sort])
+  const areas = useMemo(() => areasOf(rows, city), [rows, city])
+  const matched = useMemo(() => filterAndSort(rows, { q, city, area, sel, sort }), [rows, q, city, area, sel, sort])
   const shown = matched.slice(0, SHOW_AT_MOST).map((r) => byId.get(r.id)!)
 
   // My average per cafe, for the "You gave it" comparison line.
@@ -97,7 +99,7 @@ function Activity({ sort }: { sort: Sort }) {
   return (
     <>
       <FilterBar
-        scope="everyone" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities}
+        scope="everyone" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities} area={area} onArea={setArea} areas={areas}
         presets={presets} selected={sel}
         onToggle={(cat, label) => setSel((cur) => toggleSelected(cur, cat, label))}
         onClearChips={() => setSel(emptySelection())}
@@ -108,7 +110,7 @@ function Activity({ sort }: { sort: Sort }) {
       </p>
       {error && <p className="error" role="alert">{error}</p>}
       {data && data.length === 0 && <p className="muted">Nothing here yet. Log a visit to get it started.</p>}
-      {data && data.length > 0 && matched.length === 0 && <p className="muted">No visits match. Clear the search, the city or the quick filters.</p>}
+      {data && data.length > 0 && matched.length === 0 && <p className="muted">No visits match. Clear the search, the city, the neighbourhood or the quick filters.</p>}
 
       {blocks.map((block, i) => {
         if (block.kind === 'divider') {

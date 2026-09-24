@@ -15,14 +15,15 @@ export type FeedRow = Features & {
   publicNote: string | null
 }
 
-export type FeedQuery = { q: string; city: string; sel: Selected; sort: Sort }
+export type FeedQuery = { q: string; city: string; area?: string; sel: Selected; sort: Sort }
 
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
 const byRecent = (a: FeedRow, b: FeedRow) =>
   b.visitedOn.localeCompare(a.visitedOn) || b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id)
 
-export function rowMatches(r: FeedRow, { q, city, sel }: Pick<FeedQuery, 'q' | 'city' | 'sel'>): boolean {
+export function rowMatches(r: FeedRow, { q, city, area, sel }: Pick<FeedQuery, 'q' | 'city' | 'area' | 'sel'>): boolean {
   if (city && r.city !== city) return false
+  if (area && r.area !== area) return false
   if (!matchesVisit(r, sel)) return false
   return matchesSearch(q, [r.cafeName, r.area, r.city, ...r.drinks, r.publicNote, r.who])
 }
@@ -48,6 +49,10 @@ export function filterAndSort(rows: FeedRow[], query: FeedQuery): FeedRow[] {
 /** The cities that appear, for the city menu. */
 export const citiesOf = (rows: FeedRow[]): string[] =>
   [...new Set(rows.map((r) => r.city).filter(Boolean))].sort((a, b) => collator.compare(a, b))
+
+/** The neighbourhoods that appear, for the neighbourhood menu; within one city when a city is chosen. */
+export const areasOf = (rows: FeedRow[], city = ''): string[] =>
+  [...new Set(rows.filter((r) => !city || r.city === city).map((r) => r.area).filter(Boolean))].sort((a, b) => collator.compare(a, b))
 
 /** specv2 §8.4.5: "you agree" within 0.25 of each other, otherwise who rated it higher. */
 export function compareLabel(mine: number, theirs: number): string {

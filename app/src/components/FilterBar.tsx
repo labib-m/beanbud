@@ -7,6 +7,9 @@ type Props = {
   city: string
   onCity: (c: string) => void
   cities: string[]
+  area: string
+  onArea: (a: string) => void
+  areas: string[]
   presets: Presets
   selected: Selected
   onToggle: (cat: Category, label: string) => void
@@ -19,7 +22,7 @@ const COPY = {
 }
 
 /** The same controls on the Notebook and the Feed (specv2 §7 Filter row). Only the reach of the search differs. Sorting lives in the view tabs above. */
-export function FilterBar({ scope, q, onQ, city, onCity, cities, presets, selected, onToggle, onClearChips }: Props) {
+export function FilterBar({ scope, q, onQ, city, onCity, cities, area, onArea, areas, presets, selected, onToggle, onClearChips }: Props) {
   const copy = COPY[scope]
   const chips = CATEGORIES.flatMap((cat) => presets[cat].map((label) => ({ cat, label })))
   return (
@@ -32,9 +35,15 @@ export function FilterBar({ scope, q, onQ, city, onCity, cities, presets, select
       <p className={`scope-hint ${scope}`}>{copy.hint}</p>
       <div className="filter-row">
         <span className="filter-pill-wrap">
-          <select className="filter-pill" aria-label="City" value={city} onChange={(e) => onCity(e.target.value)}>
+          <select className="filter-pill" aria-label="City" value={city} onChange={(e) => { onCity(e.target.value); onArea('') }}>
             <option value="">All cities</option>
             {cities.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </span>
+        <span className="filter-pill-wrap">
+          <select className="filter-pill" aria-label="Neighbourhood" value={area} onChange={(e) => onArea(e.target.value)}>
+            <option value="">All neighbourhoods</option>
+            {areas.map((a) => <option key={a}>{a}</option>)}
           </select>
         </span>
         {chips.length > 0 && <span className="filter-sep" aria-hidden="true" />}

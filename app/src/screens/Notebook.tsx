@@ -51,16 +51,19 @@ export function Notebook() {
   const { visits, error, openLog } = useVisits()
   const [q, setQ] = useState('')
   const [city, setCity] = useState('')
+  const [area, setArea] = useState('')
   const [sort, setSort] = useState<Sort>('recent')
   const [sel, setSel] = useState<Selected>(emptySelection)
 
   const groups = useMemo(() => groupByCafe(visits ?? []), [visits])
   const cities = useMemo(() => [...new Set(groups.map((g) => g.cafe.city))].sort(), [groups])
+  const areas = useMemo(() => [...new Set(groups.filter((g) => !city || g.cafe.city === city).map((g) => g.cafe.area))].filter(Boolean).sort(), [groups, city])
   const presets = useMemo(() => topPresets((visits ?? []).map(featuresOf)), [visits])
 
   const shown = useMemo(() => {
     const list = groups.filter((g) => {
       if (city && g.cafe.city !== city) return false
+      if (area && g.cafe.area !== area) return false
       if (!matchesCafe(g.visits.map(featuresOf), sel)) return false
       return matchesSearch(q, [g.cafe.name, g.cafe.city, g.cafe.area, ...g.visits.flatMap((v) => v.visit_drinks.map((d) => d.drink_type))])
     })
@@ -71,7 +74,7 @@ export function Notebook() {
       name: (a, b) => a.cafe.name.localeCompare(b.cafe.name),
     }
     return list.sort(by[sort])
-  }, [groups, q, city, sort, sel])
+  }, [groups, q, city, area, sort, sel])
 
   // specv2 §9.2: date/month segmentation only applies to the "Most recent" sort; any other
   // sort is a single group labelled with the sort's own name, no dividers.
@@ -122,7 +125,7 @@ export function Notebook() {
           <ViewTabs label="Sort" tabs={TABS.map((t) => ({ key: t, label: SORT_TAB_LABEL[t] }))} value={sort} onChange={setSort} />
 
           <FilterBar
-            scope="notebook" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities}
+            scope="notebook" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities} area={area} onArea={setArea} areas={areas}
             presets={presets} selected={sel}
             onToggle={(cat, label) => setSel((cur) => toggleSelected(cur, cat, label))}
             onClearChips={() => setSel(emptySelection())}
@@ -130,7 +133,7 @@ export function Notebook() {
 
           <p className="result-count">{shown.length} {shown.length === 1 ? 'cafe' : 'cafes'}</p>
 
-          {shown.length === 0 && <p className="muted">No matches. Clear the search, the city or the quick filters.</p>}
+          {shown.length === 0 && <p className="muted">No matches. Clear the search, the city, the neighbourhood or the quick filters.</p>}
 
           {blocks.map((block, i) => {
             if (block.kind === 'divider') {
