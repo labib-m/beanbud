@@ -6,7 +6,7 @@ import { VISIT_DETAIL_COLUMNS, type FeedVisit, type LiteVisit, type Profile, typ
 export async function fetchFeed(limit = 1000): Promise<FeedVisit[]> {
   const { data, error } = await supabase
     .from('visits')
-    .select(`${VISIT_DETAIL_COLUMNS}, cafes(id, name, city, area), profiles(display_name, handle, avatar)`)
+    .select(`${VISIT_DETAIL_COLUMNS}, cafes(id, name, city, area), profiles!visits_user_id_fkey(display_name, handle, avatar)`)
     .order('visited_on', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(limit)

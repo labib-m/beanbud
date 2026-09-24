@@ -33,7 +33,7 @@ export async function fetchCafePage(cafeId: string): Promise<CafePage | null> {
     supabase.from('cafes').select('id, name, city, area, address, map_url, code').eq('id', cafeId).maybeSingle(),
     supabase
       .from('visits')
-      .select(`${VISIT_DETAIL_COLUMNS}, profiles(display_name, handle, avatar)`)
+      .select(`${VISIT_DETAIL_COLUMNS}, profiles!visits_user_id_fkey(display_name, handle, avatar)`)
       .eq('cafe_id', cafeId)
       .order('visited_on', { ascending: false })
       .order('created_at', { ascending: false })
