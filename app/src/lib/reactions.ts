@@ -1,18 +1,16 @@
-// Reactions on logs: the three choices, tallying them, and what a tap does. Pure, no imports
+// Reactions on logs: there is one, love. Tallying them, and what a tap does. Pure, no imports
 // (tested in supabase/tests/reactions.test.mjs).
 
-export type ReactionKind = 'love' | 'question' | 'dislike'
+export type ReactionKind = 'love'
 
 export const REACTIONS: { kind: ReactionKind; symbol: string; label: string }[] = [
   { kind: 'love', symbol: '❤️', label: 'Love' },
-  { kind: 'question', symbol: '❓', label: 'Question' },
-  { kind: 'dislike', symbol: '👎', label: 'Dislike' },
 ]
 
 export type ReactionRow = { visit_id: string; user_id: string; kind: ReactionKind }
 export type Tally = { counts: Record<ReactionKind, number>; mine: ReactionKind | null }
 
-const empty = (): Tally => ({ counts: { love: 0, question: 0, dislike: 0 }, mine: null })
+const empty = (): Tally => ({ counts: { love: 0 }, mine: null })
 
 /** Per visit: how many of each reaction, and which one is yours. */
 export function tally(rows: ReactionRow[], me: string): Map<string, Tally> {

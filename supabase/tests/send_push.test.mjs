@@ -52,9 +52,8 @@ test('supportNotification: a long message is cut to a short preview', () => {
   assert.ok(n.body.endsWith('…'))
 })
 
-test('reactionNotification: one line per reaction, naming who and the cafe, opening the Feed', () => {
+test('reactionNotification: the love line names who and the cafe and opens the Feed; anything else is ignored', () => {
   assert.deepEqual(m.reactionNotification('love', 'Nabila', 'Barock'), { title: 'Brewhi!', body: '❤️ Nabila loved your log at Barock', url: '/feed' })
-  assert.equal(m.reactionNotification('question', 'Nabila', 'Barock').body, '❓ Nabila has a question about your log at Barock')
-  assert.equal(m.reactionNotification('dislike', 'Nabila', 'Barock').body, '👎 Nabila disliked your log at Barock')
+  assert.equal(m.reactionNotification('dislike', 'Nabila', 'Barock'), null)
   assert.equal(m.reactionNotification('thumbsup', 'Nabila', 'Barock'), null)
 })

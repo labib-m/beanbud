@@ -72,8 +72,6 @@ export function supportNotification(who: string, text: string) {
 
 const REACTION_LINES: Record<string, (who: string, cafe: string) => string> = {
   love: (who, cafe) => `❤️ ${who} loved your log at ${cafe}`,
-  question: (who, cafe) => `❓ ${who} has a question about your log at ${cafe}`,
-  dislike: (who, cafe) => `👎 ${who} disliked your log at ${cafe}`,
 }
 
 /** The notification the owner of a log gets when someone reacts to it. Null for an unknown reaction. */
