@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useBrewWire } from '../data/BrewWireProvider'
 import { sortNewest } from '../lib/announcements'
 import { AnnouncementComposer } from './AnnouncementComposer'
+import { ContactForm } from './ContactForm'
 import { SupportInbox } from './SupportInbox'
 
 const stamp = (iso: string) =>
@@ -17,6 +18,7 @@ export function BrewWire() {
   const { list, isAdmin, markSeen, removeAnnouncement } = useBrewWire()
   const [params] = useSearchParams()
   const target = params.get('post')
+  const [messaging, setMessaging] = useState(false)
   const [armed, setArmed] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const sorted = sortNewest(list)
@@ -41,6 +43,11 @@ export function BrewWire() {
 
   return (
     <>
+      <div className="wire-contact">
+        {messaging
+          ? <ContactForm onDone={() => setMessaging(false)} doneLabel="Done" />
+          : <button type="button" className="btn ghost" onClick={() => setMessaging(true)}>Message the developer</button>}
+      </div>
       {isAdmin && <AnnouncementComposer />}
       {isAdmin && <SupportInbox />}
       {sorted.length === 0 ? (

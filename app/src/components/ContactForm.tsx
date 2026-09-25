@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { sendSupportMessage } from '../data/support'
 
-/** You -> Contact: a plain message to the developer. Only the admin can read what's sent. */
-export function ContactForm({ onDone }: { onDone: () => void }) {
+/** You -> Contact and Brew Wire -> Message the developer: a plain message to the developer. Only the admin can read what's sent. */
+export function ContactForm({ onDone, doneLabel = 'Back to You' }: { onDone: () => void; doneLabel?: string }) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -26,7 +26,7 @@ export function ContactForm({ onDone }: { onDone: () => void }) {
     return (
       <div className="stack">
         <p className="contact-blurb">Thanks. Your message is on its way to the developer.</p>
-        <button type="button" className="btn ghost" onClick={onDone}>Back to You</button>
+        <button type="button" className="btn ghost" onClick={onDone}>{doneLabel}</button>
       </div>
     )
   }

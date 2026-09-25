@@ -521,3 +521,5 @@ button.cal-day:focus-visible { outline: 2px solid var(--acc); outline-offset: 2p
 .day-log { display: flex; flex-direction: column; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .day-log:last-child { border-bottom: 0; }
 .day-log .text-link { align-self: flex-start; margin-top: 4px; background: none; border: 0; padding: 0; cursor: pointer; font: 600 13px var(--text); }
+
+.wire-contact { margin: 0 0 16px; }
