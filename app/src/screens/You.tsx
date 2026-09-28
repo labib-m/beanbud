@@ -72,7 +72,7 @@ export function You() {
             </Link>
           )}
 
-          <WishlistSection visitedCafeIds={data.mine.map((v) => v.cafe_id)} />
+          <WishlistSection userId={me} visitedCafeIds={data.mine.map((v) => v.cafe_id)} own />
 
           <RecentSections userId={me} own limit={3} />
 

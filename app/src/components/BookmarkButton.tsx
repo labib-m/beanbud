@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
+import { useAuth } from '../auth/AuthProvider'
 import { addBookmark, isBookmarked, removeBookmark } from '../data/wishlist'
 
-/** "Want to try": adds or removes this cafe on your wishlist (shown on You). */
+/** "Want to try": adds or removes this cafe on YOUR OWN wishlist (shown on You, and on your profile). */
 export function BookmarkButton({ cafeId }: { cafeId: string }) {
+  const { session } = useAuth()
+  const me = session!.user.id
   const [saved, setSaved] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
   useEffect(() => {
     let alive = true
-    isBookmarked(cafeId).then((v) => alive && setSaved(v)).catch((e: Error) => alive && setErr(e.message))
+    isBookmarked(cafeId, me).then((v) => alive && setSaved(v)).catch((e: Error) => alive && setErr(e.message))
     return () => { alive = false }
-  }, [cafeId])
+  }, [cafeId, me])
 
   async function toggle() {
     if (saved === null || busy) return

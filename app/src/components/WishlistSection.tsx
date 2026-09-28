@@ -8,7 +8,7 @@ import { cafeRating } from '../lib/cafeInfo'
 import { stillToTry } from '../lib/wishlist'
 import type { WishlistItem } from '../lib/types'
 
-function WishlistCard({ item, average, onRemove }: { item: WishlistItem; average: number; onRemove: () => void }) {
+function WishlistCard({ item, average, onRemove }: { item: WishlistItem; average: number; onRemove?: () => void }) {
   return (
     <div className="wish-card">
       <div className="row-top">
@@ -19,29 +19,33 @@ function WishlistCard({ item, average, onRemove }: { item: WishlistItem; average
       </div>
       <div className="wish-card-bottom">
         <p className="row-meta">{[item.cafes.area, item.cafes.city].filter(Boolean).join(', ')}</p>
-        <button type="button" className="wish-remove" aria-label={`Remove ${item.cafes.name} from your wishlist`} onClick={onRemove}>×</button>
+        {onRemove && <button type="button" className="wish-remove" aria-label={`Remove ${item.cafes.name} from your wishlist`} onClick={onRemove}>×</button>}
       </div>
       {item.cafes.map_url && <a className="text-link" href={item.cafes.map_url} target="_blank" rel="noopener noreferrer">Open in Maps ↗</a>}
     </div>
   )
 }
 
-/** The cafes you've bookmarked to try, as cards, with an "Add a cafe" button above the list. A cafe drops off once you've logged a visit there. */
-export function WishlistCards({ visitedCafeIds }: { visitedCafeIds: string[] }) {
+/**
+ * The cafes on someone's wishlist, as cards. `own` shows the "+ Add a cafe" button and lets
+ * each card be removed; without it, the list is read-only (another person's wishlist, on
+ * their profile). A cafe drops off once its owner has logged a visit there.
+ */
+export function WishlistCards({ userId, visitedCafeIds, own = false }: { userId: string; visitedCafeIds: string[]; own?: boolean }) {
   const [items, setItems] = useState<WishlistItem[] | null>(null)
   const [averages, setAverages] = useState<Map<string, number>>(new Map())
   const [err, setErr] = useState('')
   const [adding, setAdding] = useState(false)
 
   function load() {
-    fetchWishlist().then(setItems).catch((e: Error) => setErr(e.message))
+    fetchWishlist(userId).then(setItems).catch((e: Error) => setErr(e.message))
     fetchLiteVisits().then((visits) => {
       const byCafe = new Map<string, (number | null)[]>()
       for (const v of visits) byCafe.set(v.cafe_id, [...(byCafe.get(v.cafe_id) ?? []), v.overall])
       setAverages(new Map([...byCafe].map(([id, overalls]) => [id, cafeRating(overalls).average])))
     }).catch(() => {})
   }
-  useEffect(load, [])
+  useEffect(load, [userId])
 
   const shown = useMemo(() => stillToTry(items ?? [], visitedCafeIds), [items, visitedCafeIds])
 
@@ -56,25 +60,31 @@ export function WishlistCards({ visitedCafeIds }: { visitedCafeIds: string[] }) 
 
   return (
     <>
-      <button type="button" className="btn ghost" onClick={() => setAdding(true)}>+ Add a cafe</button>
-      {adding && <AddCafeForm onClose={() => setAdding(false)} onAdded={() => { setAdding(false); load() }} />}
+      {own && <button type="button" className="btn ghost" onClick={() => setAdding(true)}>+ Add a cafe</button>}
+      {own && adding && <AddCafeForm onClose={() => setAdding(false)} onAdded={() => { setAdding(false); load() }} />}
       {err && <p className="error small" role="alert">{err}</p>}
-      {items && shown.length === 0 && <p className="muted">Nothing on your wishlist. Tap "Want to try" on any cafe's page, or add one above.</p>}
+      {items && shown.length === 0 && (
+        <p className="muted">
+          {own ? 'Nothing on your wishlist. Tap "Want to try" on any cafe\'s page, or add one above.' : 'Nothing on their wishlist yet.'}
+        </p>
+      )}
       {shown.length > 0 && (
         <div className="wish-cards">
-          {shown.map((i) => <WishlistCard key={i.cafe_id} item={i} average={averages.get(i.cafe_id) ?? 0} onRemove={() => remove(i.cafe_id)} />)}
+          {shown.map((i) => (
+            <WishlistCard key={i.cafe_id} item={i} average={averages.get(i.cafe_id) ?? 0} onRemove={own ? () => remove(i.cafe_id) : undefined} />
+          ))}
         </div>
       )}
     </>
   )
 }
 
-/** The You page's Wishlist section: the same cards, under a section label. */
-export function WishlistSection({ visitedCafeIds }: { visitedCafeIds: string[] }) {
+/** The Wishlist section, under a section label: your own on You (editable), or someone else's on their profile (read-only). */
+export function WishlistSection({ userId, visitedCafeIds, own = false }: { userId: string; visitedCafeIds: string[]; own?: boolean }) {
   return (
     <section className="section">
       <span className="section-label">Wishlist</span>
-      <WishlistCards visitedCafeIds={visitedCafeIds} />
+      <WishlistCards userId={userId} visitedCafeIds={visitedCafeIds} own={own} />
     </section>
   )
 }

@@ -5,6 +5,7 @@ import { Avatar } from '../components/Avatar'
 import { ProfileSummary } from '../components/ProfileSummary'
 import { RecentSections } from '../components/RecentSections'
 import { VisitLog } from '../components/VisitLog'
+import { WishlistSection } from '../components/WishlistSection'
 import { fetchLiteVisits, fetchProfiles, fetchVisitsBy } from '../data/social'
 import { useLoad } from '../data/useLoad'
 import { displayName, identityLine, overlaps, statsFor } from '../lib/people'
@@ -27,7 +28,7 @@ export function PersonProfile() {
     if (!p) return null
     const theirs = data.visits.filter((v) => v.user_id === userId)
     const mine = data.visits.filter((v) => v.user_id === me)
-    return { p, stats: statsFor(theirs), shared: overlaps(mine, theirs) }
+    return { p, stats: statsFor(theirs), shared: overlaps(mine, theirs), visitedCafeIds: theirs.map((v) => v.cafe_id) }
   }, [data, userId, me])
 
   const logs = useLoad(() => (userId ? fetchVisitsBy(userId) : Promise.resolve([])), [userId])
@@ -71,6 +72,8 @@ export function PersonProfile() {
               </ul>
             )}
           </section>
+
+          <WishlistSection userId={view.p.id} visitedCafeIds={view.visitedCafeIds} />
 
           <RecentSections userId={view.p.id} name={displayName(view.p).split(' ')[0]} />
 

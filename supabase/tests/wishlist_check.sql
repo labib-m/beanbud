@@ -1,8 +1,9 @@
 -- =====================================================================
 -- Bean Bud — wishlist: security policy checks
 --
--- Run in the Supabase SQL editor, AFTER 20260927000100_wishlist.sql. See rls_check.sql for
--- how this pattern works. Ends with ROLLBACK, so nothing it creates is kept.
+-- Run in the Supabase SQL editor, AFTER 20260927000100_wishlist.sql and
+-- 20260929000100_wishlist_public_read.sql. See rls_check.sql for how this pattern
+-- works. Ends with ROLLBACK, so nothing it creates is kept.
 -- =====================================================================
 begin;
 
@@ -40,12 +41,12 @@ begin
   end;
   reset role;
 
-  -- Alice cannot see or remove Bob's bookmark.
+  -- Alice can see Bob's bookmark (wishlists are public to read) but cannot remove it.
   perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  select count(*) into n from public.wishlist;
-  if n <> 0 then raise exception 'FAIL: alice could see bob''s wishlist'; end if;
-  raise notice 'PASS: nobody else can see your wishlist';
+  select count(*) into n from public.wishlist where user_id = bob;
+  if n <> 1 then raise exception 'FAIL: alice could not see bob''s wishlist'; end if;
+  raise notice 'PASS: everyone signed in can see a wishlist, including someone else''s';
   delete from public.wishlist where cafe_id = cafe;
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'FAIL: alice removed bob''s bookmark'; end if;
@@ -55,7 +56,7 @@ begin
   -- Bob can see and remove his own.
   perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  select count(*) into n from public.wishlist;
+  select count(*) into n from public.wishlist where user_id = bob;
   if n <> 1 then raise exception 'FAIL: bob could not see his own bookmark'; end if;
   delete from public.wishlist where cafe_id = cafe;
   get diagnostics n = row_count;

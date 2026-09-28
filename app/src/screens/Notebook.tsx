@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/AuthProvider'
 import { Stars } from '../components/Stars'
 import { useVisits } from '../data/VisitsProvider'
 import { relativeDate, segmentNotebook, type NotebookBlock } from '../lib/segments'
@@ -50,6 +51,8 @@ function Row({ g, featured }: { g: CafeGroup; featured: boolean }) {
 }
 
 export function Notebook() {
+  const { session } = useAuth()
+  const me = session!.user.id
   const { visits, error, openLog } = useVisits()
   const [q, setQ] = useState('')
   const [city, setCity] = useState('')
@@ -113,7 +116,7 @@ export function Notebook() {
         value={view} onChange={setView}
       />
 
-      {view === 'wishlist' && <WishlistCards visitedCafeIds={groups.map((g) => g.cafeId)} />}
+      {view === 'wishlist' && <WishlistCards userId={me} visitedCafeIds={groups.map((g) => g.cafeId)} own />}
 
       {view !== 'wishlist' && visits.length === 0 && (
         <div className="empty">
