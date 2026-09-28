@@ -17,8 +17,15 @@ export function AddCafeForm({ onClose, onAdded }: { onClose: () => void; onAdded
   const [cafes, setCafes] = useState<DirectoryCafe[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showSuggest, setShowSuggest] = useState(false)
 
   useEffect(() => { fetchDirectory().then(setCafes).catch(() => {}) }, [])
+
+  const suggestions = useMemo(() => {
+    const q = norm(name)
+    if (!q) return []
+    return cafes.filter((c) => norm(c.name).includes(q)).slice(0, 3)
+  }, [cafes, name])
 
   const existing = useMemo(
     () => cafes.find((c) => norm(c.name) === norm(name) && norm(c.city) === norm(city) && norm(c.area) === norm(area)),
@@ -31,6 +38,7 @@ export function AddCafeForm({ onClose, onAdded }: { onClose: () => void; onAdded
 
   function pick(c: DirectoryCafe) {
     setName(c.name); setCity(c.city); setArea(c.area)
+    setShowSuggest(false)
   }
 
   async function save() {
@@ -70,7 +78,25 @@ export function AddCafeForm({ onClose, onAdded }: { onClose: () => void; onAdded
 
           <section className="panel">
             <label className="field-label" htmlFor="wc-name">Cafe</label>
-            <input id="wc-name" className="input sm" value={name} autoFocus onChange={(e) => setName(e.target.value)} placeholder="Where do you want to try?" />
+            <div className="combo">
+              <input
+                id="wc-name" className="name-input" value={name} autoComplete="off" autoFocus
+                placeholder="Where do you want to try?"
+                onChange={(e) => { setName(e.target.value); setShowSuggest(true) }}
+                onFocus={() => setShowSuggest(true)}
+                onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
+              />
+              {showSuggest && suggestions.length > 0 && (
+                <ul className="suggest" role="listbox">
+                  {suggestions.map((c) => (
+                    <li key={c.id} role="option" aria-selected="false" onMouseDown={(e) => { e.preventDefault(); pick(c) }}>
+                      <b>{c.name}</b>
+                      <span>{[c.area, c.city].filter(Boolean).join(', ')}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <div className="row2">
               <div>
                 <label className="field-label" htmlFor="wc-city">City</label>
