@@ -203,7 +203,7 @@ export const VISIT_DETAIL_COLUMNS =
 export type WishlistItem = {
   cafe_id: string
   created_at: string
-  cafes: { id: string; name: string; city: string; area: string }
+  cafes: { id: string; name: string; city: string; area: string; map_url: string | null }
 }
 
 /** A message someone sent the developer through You -> Contact. Only the admin can read these. */

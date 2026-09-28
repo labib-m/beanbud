@@ -72,3 +72,16 @@ export async function editCafe(cafeId: string, address: string, mapUrl: string):
   const { error } = await supabase.rpc('edit_cafe', { p_cafe_id: cafeId, p_address: address, p_map_url: mapUrl })
   if (error) throw new Error(friendly(error))
 }
+
+export type NewCafeInput = { name: string; city: string; area: string; address: string; map_url: string }
+
+/** Enlist a new cafe into the shared directory, with no visit attached. */
+export async function addCafe(input: NewCafeInput): Promise<CafeRecord> {
+  const { data, error } = await supabase.from('cafes').insert(input).select('id, name, city, area, address, map_url, code').single()
+  if (error) {
+    if (error.code === '23505') throw new Error('That cafe is already in the directory.')
+    if (error.code === '23514') throw new Error("Check the cafe's details — something isn't valid.")
+    throw new Error(error.message)
+  }
+  return data as CafeRecord
+}

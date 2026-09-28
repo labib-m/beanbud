@@ -10,7 +10,7 @@ function friendly(e: { code?: string; message: string }): Error {
 export async function fetchWishlist(): Promise<WishlistItem[]> {
   const { data, error } = await supabase
     .from('wishlist')
-    .select('cafe_id, created_at, cafes(id, name, city, area)')
+    .select('cafe_id, created_at, cafes(id, name, city, area, map_url)')
     .order('created_at', { ascending: false })
   if (error) throw friendly(error)
   return data as unknown as WishlistItem[]

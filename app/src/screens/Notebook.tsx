@@ -7,10 +7,12 @@ import { groupByCafe, todayLocal, trend, type CafeGroup } from '../lib/stats'
 import { currencySymbol, noteOf } from '../lib/types'
 import { FilterBar } from '../components/FilterBar'
 import { ViewTabs } from '../components/ViewTabs'
+import { WishlistCards } from '../components/WishlistSection'
 import { emptySelection, matchesCafe, matchesSearch, SORT_TAB_LABEL, toggleSelected, topPresets, type Selected, type Sort } from '../lib/filters'
 import { featuresOf } from '../lib/visitFeatures'
 
 const TABS: Sort[] = ['recent', 'score', 'visits', 'name']
+type NotebookView = Sort | 'wishlist'
 
 /** Area, City · <relative last visit> · N visits · <price band>, per specv2 §8.1.5. */
 function metaLine(g: CafeGroup): string {
@@ -52,7 +54,8 @@ export function Notebook() {
   const [q, setQ] = useState('')
   const [city, setCity] = useState('')
   const [area, setArea] = useState('')
-  const [sort, setSort] = useState<Sort>('recent')
+  const [view, setView] = useState<NotebookView>('recent')
+  const sort: Sort = view === 'wishlist' ? 'recent' : view
   const [sel, setSel] = useState<Selected>(emptySelection)
 
   const groups = useMemo(() => groupByCafe(visits ?? []), [visits])
@@ -104,7 +107,15 @@ export function Notebook() {
 
       {error && <p className="error" role="alert">{error}</p>}
 
-      {visits.length === 0 && (
+      <ViewTabs
+        label="Sort"
+        tabs={[...TABS.map((t) => ({ key: t as NotebookView, label: SORT_TAB_LABEL[t] })), { key: 'wishlist' as NotebookView, label: 'Wishlist' }]}
+        value={view} onChange={setView}
+      />
+
+      {view === 'wishlist' && <WishlistCards visitedCafeIds={groups.map((g) => g.cafeId)} />}
+
+      {view !== 'wishlist' && visits.length === 0 && (
         <div className="empty">
           <h2 className="empty-headline">Nothing here yet.</h2>
           <p className="empty-sub">Start with the last cafe you sat in. A name, a city and a few ratings is enough.</p>
@@ -113,17 +124,15 @@ export function Notebook() {
         </div>
       )}
 
-      {visits.length > 0 && groups.length === 1 && (
+      {view !== 'wishlist' && visits.length > 0 && groups.length === 1 && (
         <>
           <Row g={groups[0]} featured />
           <p className="one-entry-note">One cafe in. Log a second visit here and the notebook starts showing whether it's getting better or worse.</p>
         </>
       )}
 
-      {visits.length > 0 && groups.length >= 2 && (
+      {view !== 'wishlist' && visits.length > 0 && groups.length >= 2 && (
         <>
-          <ViewTabs label="Sort" tabs={TABS.map((t) => ({ key: t, label: SORT_TAB_LABEL[t] }))} value={sort} onChange={setSort} />
-
           <FilterBar
             scope="notebook" q={q} onQ={setQ} city={city} onCity={setCity} cities={cities} area={area} onArea={setArea} areas={areas}
             presets={presets} selected={sel}

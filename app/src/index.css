@@ -499,8 +499,16 @@ textarea.input.area.short { min-height: 70px; }
 /* ---- wishlist ---- */
 .btn.ghost.bookmark { display: inline-flex; align-items: center; gap: 7px; }
 .btn.ghost.bookmark.on { color: var(--acc); border-color: var(--acc); }
-.wish-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.wish-main { flex: 1; min-width: 0; color: inherit; text-decoration: none; }
+.wish-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.wish-card { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 20px; background: var(--surf); }
+.wish-card .row-top { align-items: center; }
+.wish-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wish-remove {
+  flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--line2); background: none; color: var(--mut); font-size: 15px; line-height: 1; cursor: pointer;
+}
+.wish-remove:hover { color: var(--ink); }
+.wish-remove:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
 .detail-links { display: flex; gap: 18px; flex-wrap: wrap; padding: 10px 0 4px; }
 .name-link { color: inherit; text-decoration: none; }
