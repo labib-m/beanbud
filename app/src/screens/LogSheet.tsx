@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ComboField } from '../components/ComboField'
 import { StarInput } from '../components/StarInput'
+import { areaMatches, cityMatches } from '../lib/cafeSuggest'
 import { checkDetailsUpdate, newCafeProblem, type DetailsCheck } from '../lib/cafeRules'
 import { ConfirmCafeUpdate } from '../components/ConfirmCafeUpdate'
 import { similarCafes } from '../lib/similar'
@@ -90,6 +92,8 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
     if (!q) return []
     return cafes.filter((c) => norm(c.name).includes(q)).slice(0, 3)
   }, [cafes, name])
+  const cityOptions = useMemo(() => cityMatches(cafes, city), [cafes, city])
+  const areaOptions = useMemo(() => areaMatches(cafes, city, area), [cafes, city, area])
 
   const catalog = useMemo(() => {
     const chosen = drinks.map((d) => d.type)
@@ -267,11 +271,11 @@ export function LogSheet({ userId, editing, cafe: preset, onClose, onSaved }: Pr
             <div className="row2">
               <div>
                 <label className="field-label" htmlFor="f-city">City</label>
-                <input id="f-city" className="input sm" value={city} placeholder="Dhaka" onChange={(e) => setCity(e.target.value)} />
+                <ComboField id="f-city" value={city} onChange={setCity} suggestions={cityOptions} placeholder="Dhaka" />
               </div>
               <div>
                 <label className="field-label" htmlFor="f-area">Neighbourhood</label>
-                <input id="f-area" className="input sm" value={area} placeholder="Gulshan 2" onChange={(e) => setArea(e.target.value)} />
+                <ComboField id="f-area" value={area} onChange={setArea} suggestions={areaOptions} placeholder="Gulshan 2" />
               </div>
             </div>
             <label className="field-label" htmlFor="f-date">Date of this visit</label>

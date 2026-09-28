@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addCafe, fetchDirectory } from '../data/cafes'
 import { addBookmark } from '../data/wishlist'
+import { areaMatches, cityMatches, nameMatches } from '../lib/cafeSuggest'
 import { newCafeProblem } from '../lib/cafeRules'
 import type { DirectoryCafe } from '../lib/directory'
 import { similarCafes } from '../lib/similar'
+import { ComboField } from './ComboField'
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
 
@@ -21,11 +23,9 @@ export function AddCafeForm({ onClose, onAdded }: { onClose: () => void; onAdded
 
   useEffect(() => { fetchDirectory().then(setCafes).catch(() => {}) }, [])
 
-  const suggestions = useMemo(() => {
-    const q = norm(name)
-    if (!q) return []
-    return cafes.filter((c) => norm(c.name).includes(q)).slice(0, 3)
-  }, [cafes, name])
+  const suggestions = useMemo(() => nameMatches(cafes, name), [cafes, name])
+  const cityOptions = useMemo(() => cityMatches(cafes, city), [cafes, city])
+  const areaOptions = useMemo(() => areaMatches(cafes, city, area), [cafes, city, area])
 
   const existing = useMemo(
     () => cafes.find((c) => norm(c.name) === norm(name) && norm(c.city) === norm(city) && norm(c.area) === norm(area)),
@@ -63,8 +63,8 @@ export function AddCafeForm({ onClose, onAdded }: { onClose: () => void; onAdded
   }
 
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-label="Add a cafe to your wishlist">
-      <div className="sheet small">
+    <div className="overlay center" role="dialog" aria-modal="true" aria-label="Add a cafe to your wishlist">
+      <div className="sheet float">
         <header className="sheet-head">
           <button type="button" className="link mut" onClick={onClose}>Cancel</button>
           <h2 className="sheet-title">Add a cafe</h2>
@@ -100,11 +100,11 @@ export function AddCafeForm({ onClose, onAdded }: { onClose: () => void; onAdded
             <div className="row2">
               <div>
                 <label className="field-label" htmlFor="wc-city">City</label>
-                <input id="wc-city" className="input sm" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Dhaka" />
+                <ComboField id="wc-city" value={city} onChange={setCity} suggestions={cityOptions} placeholder="Dhaka" />
               </div>
               <div>
                 <label className="field-label" htmlFor="wc-area">Neighbourhood</label>
-                <input id="wc-area" className="input sm" value={area} onChange={(e) => setArea(e.target.value)} placeholder="Gulshan 2" />
+                <ComboField id="wc-area" value={area} onChange={setArea} suggestions={areaOptions} placeholder="Gulshan 2" />
               </div>
             </div>
             {existing && <span className="hint">Already in the directory — this just adds it to your wishlist.</span>}
