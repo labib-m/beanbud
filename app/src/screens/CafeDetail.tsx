@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../components/Avatar'
 import { BookmarkButton } from '../components/BookmarkButton'
+import { CafeEmbedMap } from '../components/CafeEmbedMap'
 import { CriteriaBar } from '../components/CriteriaBar'
 import { PersonLink } from '../components/PersonLink'
 import { Stars } from '../components/Stars'
@@ -210,6 +211,7 @@ export function CafeDetail() {
         <div className="detail-links">
           {cafe.map_url && <a className="text-link" href={cafe.map_url} target="_blank" rel="noopener noreferrer">Open in Maps ↗</a>}
         </div>
+        <CafeEmbedMap cafe={cafe} />
         {otherFacts.map(([k, v]) => (
           <div className="detail-fact" key={k}><span className="fact-key">{k}</span><span className="fact-value">{v}</span></div>
         ))}

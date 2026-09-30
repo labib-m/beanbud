@@ -5,6 +5,7 @@ import { describeRevision, type Revision } from '../lib/history'
 import { fmtDate, money } from '../lib/stats'
 import { SCORES, currencySymbol } from '../lib/types'
 import { BookmarkButton } from './BookmarkButton'
+import { CafeEmbedMap } from './CafeEmbedMap'
 import { CriteriaBar } from './CriteriaBar'
 import { PersonLink } from './PersonLink'
 import { VisitLog } from './VisitLog'
@@ -51,6 +52,7 @@ export function CafePageView({ cafe, visits, revisions, rating, criteria, myVisi
         <span className="section-label">Details</span>
         <div className="detail-fact"><span className="fact-key">Address</span><span className="fact-value">{cafe.address || 'No address yet'}</span></div>
         {cafe.map_url && <a className="text-link" href={cafe.map_url} target="_blank" rel="noopener noreferrer">Open in Maps ↗</a>}
+        <CafeEmbedMap cafe={cafe} />
       </section>
 
       <section className="section">

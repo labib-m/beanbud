@@ -113,6 +113,27 @@ Open the live site in Safari, tap Share, then **Add to Home Screen**. Open it fr
 
 **New accounts get walked through this automatically.** Right after someone on an iPhone or iPad creates an account, a one-time pop-up (`app/src/components/AddToHomeScreenGuide.tsx`) shows the Share → Add to Home Screen steps and warns them they'll need to sign in again with their username and PIN the first time they open the new icon (a real limitation: a browser tab and a Home Screen icon are separate, unconnected sessions on iOS). It never shows to an existing person signing in, on Android or desktop, or a second time on the same device — the logic behind that is pure and tested in `app/src/lib/addToHomeScreen.ts` / `supabase/tests/add_to_home_screen.test.mjs`.
 
+## Embedded maps
+
+Every cafe page (yours and the shared one) can show a small embedded Google Map of that
+cafe, above the "Open in Maps" link. It's optional — without a key, the app works exactly
+as before and just skips the map.
+
+**Set it up once, per Google account:**
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/), create a project (or
+   use an existing one), and enable the **Maps Embed API** (APIs & Services → Library → search
+   "Maps Embed API" → Enable). This one API needs no billing account attached — it's free.
+2. Create an API key (APIs & Services → Credentials → Create Credentials → API key).
+3. **Restrict the key** (its edit page → "API restrictions") to only the Maps Embed API, and
+   under "Application restrictions" add your site's domains (your Vercel URL and
+   `localhost` for local work) as HTTP referrers, so the key can't be used elsewhere if it
+   ever leaks.
+4. Paste it as `VITE_GOOGLE_MAPS_EMBED_KEY` in `.env.local` (and in Vercel, see Deploy below).
+
+The map searches for the cafe's name plus its address (or neighbourhood/city if it has no
+address yet), so it needs no stored coordinates — see `app/src/lib/mapEmbed.ts`.
+
 ## Push notifications
 
 When someone logs or edits a visit, everyone else who has turned notifications on gets a push: "*Name* logged *Cafe*", tapping it opens that cafe's page. It uses the open web-push standard, not Apple or Google's own notification service, so there is nothing to register with either company.
